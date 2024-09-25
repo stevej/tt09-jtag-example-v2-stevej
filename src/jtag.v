@@ -9,9 +9,9 @@
 
 module jtag (
     input tck,
-    /* verilator lint_off UNUSEDSIGNAL */
+    /* verilator lint_off UNUSED */
     input tdi,
-    /* verilator lint_off UNUSEDSIGNAL */
+    /* verilator lint_off UNUSED */
     input tdo,
     input tms,
     input trst
