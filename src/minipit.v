@@ -1,6 +1,9 @@
 `ifndef _MINIPIT_
 `define _MINIPIT_
 
+`default_nettype none
+`timescale 1us / 100 ns
+
 module minipit (
     input clk,
     input rst_n,

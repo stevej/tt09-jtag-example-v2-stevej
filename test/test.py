@@ -54,7 +54,7 @@ async def test_rms_five_high_for_reset(dut):
         dut.ui_in.value = 0b0000_0111
         await ClockCycles(dut.clk, 1)
         dut.ui_in.value = 0b0000_0110
-        # At this point, the design is in reset but 
+        # At this point, the design is in reset but
         # the interrupt is also firing on all the other pins.
         assert dut.uo_out.value == 0xFE
 
