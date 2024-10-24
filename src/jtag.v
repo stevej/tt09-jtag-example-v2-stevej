@@ -59,7 +59,7 @@ module jtag (
 
   byte_transmitter id_byte_transmitter(
     .clk(tck),
-    .reset(r_in_reset_from_main_clk),
+    .reset(~trst),
     .enable(1'b1), // TODO: this is where mux goes.
     .in(IDCODE),
     .out(transmitter_channel), // make this another wire.
