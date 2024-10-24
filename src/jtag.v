@@ -47,7 +47,7 @@ module jtag (
   reg [4:0] current_state;
   reg r_in_reset;
   //
-  reg r_in_reset_from_main_clk;
+  wire r_in_reset_from_main_clk;
   assign in_reset = r_in_reset;
   // for checking that the TAP state machine is in reset at the right time.
   reg [4:0] tms_reset_check;
