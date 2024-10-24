@@ -1,0 +1,23 @@
+attribute INSTRUCTION_LENGTH of TT09_JTAG_STEVEJ : entity is 10;
+
+attribute INSTRUCTION_OPCODE of TT09_JTAG_STEVEJ : entity is
+  "BYPASS            (1111111111), "&
+  "EXTEST            (0000000000), "&
+  "SAMPLE            (0000000101), "&
+  "IDCODE            (0000000110), "&
+  "USERCODE          (0000000111), "&
+  "CLAMP             (0000001010), "&
+  "HIGHZ             (0000001011), "&
+  "CONFIG_IO            (0000001101)";
+
+attribute INSTRUCTION_CAPTURE of TT09_JTAG_STEVEJ : entity is "0101010101";
+
+-- IDCODE is 0xFAF01
+attribute IDCODE_REGISTER of TT09_JTAG_STEVEJ : entity is
+  "0000"&               --4-bit Version
+  "0000000011111010"&   --16-bit Part Number (hex 0xFA)
+  "11110000000"&        --11-bit Manufacturer's Identity
+  "1";                  --Mandatory LSB
+
+
+attribute BOUNDARY_LENGTH of TT09_JTAG_STEVEJ : entity is 339;

@@ -20,6 +20,8 @@ project:
     - "project.v"
     - "minipit.v"
     - "jtag.v"
+    - "byte_transmitter.v"
+    - "mux_2_1.v"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 pinout:

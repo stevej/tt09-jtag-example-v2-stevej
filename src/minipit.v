@@ -1,3 +1,6 @@
+`ifndef _MINIPIT_
+`define _MINIPIT_
+
 module minipit (
     input clk,
     input rst_n,
@@ -23,13 +26,13 @@ module minipit (
   reg [15:0] current_count;
 
   // A counter to use when the divider is enabled
-  reg [ 7:0] divider_count;
+  reg [7:0] divider_count;
 
   always @(posedge clk) begin
     if (reset) begin
-      counter <= 0;
+      counter <= 10; // TODO: don't auto-set a counter
       current_count <= 0;
-      r_counter_set <= 0;
+      r_counter_set <= 1; // TODO: don't auto-enable a default counter
       divider_count <= 0;
       r_interrupting <= 0;
     end else begin
@@ -57,6 +60,7 @@ module minipit (
         if (repeating) begin
           current_count <= 0;
         end
+
         // on a rollover of divider_count, reset the interrupt
         if (divider_on && (divider_count > 0)) begin
           r_interrupting <= 0;
@@ -67,3 +71,4 @@ module minipit (
     end
   end
 endmodule
+`endif

@@ -22,3 +22,4 @@ memory_map -rom-only
 
 [files]
 jtag.v
+byte_transmitter.v

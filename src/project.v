@@ -2,8 +2,13 @@
  * Copyright (c) 2024 Your Name
  * SPDX-License-Identifier: Apache-2.0
  */
+`ifndef _PROJECT_
+`define _PROJECT_
 
 `default_nettype none
+
+`include "jtag.v"
+`include "minipit.v"
 
 module tt_um_jtag_example_stevej (
     input  wire [7:0] ui_in,    // Dedicated inputs
@@ -17,11 +22,47 @@ module tt_um_jtag_example_stevej (
 );
 
   // All output pins must be assigned. If not used, assign to 0.
-  assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
+  //assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
   assign uio_out = 0;
   assign uio_oe  = 0;
 
+  wire jtag_in_reset;
+  wire tdo;
+  wire interrupting;
+  assign uo_out = {interrupting, interrupting, interrupting, interrupting, interrupting, interrupting, interrupting, tdo};
+  wire reset;
+  assign reset = ~rst_n;
+
+  jtag jtag0(
+    .tck(ui_in[0]),
+    .tdi(ui_in[1]),
+    .tms(ui_in[2]),
+    .trst(ui_in[3]),
+    .tdo(tdo),
+    .reset(reset),
+    .in_reset(jtag_in_reset));
+
+wire counter_set;
+
+// A hard configured interrupt rising high every 10 cycles for 1 cycle.
+minipit minipit0 (
+    .clk(clk),
+    .rst_n(rst_n),
+    .write_enable(1'b1),
+    .repeating(1'b1),
+    .counter_high(8'b0),
+    .counter_low(8'hA),
+    .divider_on(1'b0),
+    .counter_set(counter_set),
+    .interrupting(interrupting)
+);
+
+
+  // Set unused wires
+  assign uio_out[7:1] = 7'b000_0000;
+
   // List all unused inputs to prevent warnings
-  wire _unused = &{ena, clk, rst_n, 1'b0};
+  wire _unused = &{ena, ui_in, uio_in};
 
 endmodule
+`endif

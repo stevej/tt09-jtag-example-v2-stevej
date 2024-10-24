@@ -1,4 +1,9 @@
+`ifndef _JTAG_
+`define _JTAG_
+
 `default_nettype none
+
+`include "byte_transmitter.v"
 
 // Ensures that the first_state happens before the second_state.
 // We use a label as a breadcrumb in case an invalid state is asserted
@@ -10,49 +15,90 @@
 module jtag (
     input tck,
     /* verilator lint_off UNUSED */
-    input tdi,
-    /* verilator lint_off UNUSED */
-    input tdo,
-    input tms,
-    input trst
+    input wire tdi,
+    output wire tdo,
+    input wire tms,
+    input wire trst,
+    input wire reset, // comes from main domain clock.
+    output in_reset
 );
 
-  localparam bit [4:0] TestLogicReset = 5'h0;
-  localparam bit [4:0] RunTestOrIdle = 5'h1;
-  localparam bit [4:0] SelectDrScan = 5'h2;
-  localparam bit [4:0] SelectIrScan = 5'h3;
-  localparam bit [4:0] CaptureDr = 5'h4;
-  localparam bit [4:0] CaptureIr = 5'h5;
-  localparam bit [4:0] ShiftDr = 5'h6;
-  localparam bit [4:0] ShiftIr = 5'h7;
-  localparam bit [4:0] Exit1Dr = 5'h8;
-  localparam bit [4:0] Exit1Ir = 5'h9;
-  localparam bit [4:0] PauseDr = 5'h10;
-  localparam bit [4:0] PauseIr = 5'h11;
-  localparam bit [4:0] Exit2Dr = 5'h12;
-  localparam bit [4:0] Exit2Ir = 5'h13;
-  localparam bit [4:0] UpdateDr = 5'h14;
-  localparam bit [4:0] UpdateIr = 5'h15;
+  // IDCODE of our jtag device.
+  localparam [31:0] IDCODE = 32'hFAF0;
+
+  localparam [4:0] TestLogicReset = 5'h0;
+  localparam [4:0] RunTestOrIdle = 5'h1;
+  localparam [4:0] SelectDrScan = 5'h2;
+  localparam [4:0] SelectIrScan = 5'h3;
+  localparam [4:0] CaptureDr = 5'h4;
+  localparam [4:0] CaptureIr = 5'h5;
+  localparam [4:0] ShiftDr = 5'h6;
+  localparam [4:0] ShiftIr = 5'h7;
+  localparam [4:0] Exit1Dr = 5'h8;
+  localparam [4:0] Exit1Ir = 5'h9;
+  localparam [4:0] PauseDr = 5'h10;
+  localparam [4:0] PauseIr = 5'h11;
+  localparam [4:0] Exit2Dr = 5'h12;
+  localparam [4:0] Exit2Ir = 5'h13;
+  localparam [4:0] UpdateDr = 5'h14;
+  localparam [4:0] UpdateIr = 5'h15;
 
   reg [4:0] current_state;
-
+  reg r_in_reset;
+  //
+  reg r_in_reset_from_main_clk;
+  assign in_reset = r_in_reset;
   // for checking that the TAP state machine is in reset at the right time.
   reg [4:0] tms_reset_check;
   reg [7:0] cycles;
 
+  wire idcode_out_done;
+  reg transmitter_channel; // for byte_transmitter to write to TDO
+  reg tap_channel; // for TAP controller to write to TDO
+
+  byte_transmitter id_byte_transmitter(
+    .clk(tck),
+    .reset(r_in_reset_from_main_clk),
+    .enable(1'b1), // TODO: this is where mux goes.
+    .in(IDCODE),
+    .out(transmitter_channel), // make this another wire.
+    .done(idcode_out_done));
+
+reg r_output_selector_transmitter;  // 1 means TAP controller, 0 means byte transmitter
+mux_2_1 output_mux (
+    .one(tap_channel),
+    .two(transmitter_channel),
+    .selector(r_output_selector_transmitter),
+    .out(tdo)
+);
+  // Getting the reset signal from the main design clock into the 
+  // jtag design requires us to cross domain clocks so we use
+  // a small synchronizer.
+  // A single cycle pulse on output for each pulse on input:
+  (* ASYNC_REG = "TRUE" *) reg [2:0] sync;
+  always @(posedge tck) sync <= (sync << 1) | {1'b0, 1'b0, reset};
+  assign r_in_reset_from_main_clk = sync[1] & !sync[2];
+
   always @(posedge tck) begin
-    if (trst) begin
+    if (trst | r_in_reset_from_main_clk) begin
       current_state <= TestLogicReset;  // 0
       tms_reset_check <= 5'b0_0000;
       cycles <= 0;
+      r_in_reset <= 1;
+      r_output_selector_transmitter <= 1; // by default the tap controller writes
+      tap_channel <= 0;
     end else begin
+      r_in_reset <= 0;
       tms_reset_check <= tms_reset_check << 1;
       tms_reset_check[0] <= tms;
       cycles <= cycles + 1;
       // TAP state machine
       case (current_state)
         TestLogicReset: begin  // 0
+          r_in_reset <= 1;
           tms_reset_check <= 5'b0_0000;
+          tap_channel <= 0;
+
           case (tms)
             1: current_state <= TestLogicReset;
             default: current_state <= RunTestOrIdle;
@@ -84,9 +130,16 @@ module jtag (
           default: current_state <= ShiftIr;
         endcase
         ShiftDr:  // 6
+        // Pretty sure this means connect a shift register to TDO and drain it
         case (tms)
           1: current_state <= Exit1Dr;
-          default: current_state <= ShiftDr;
+          default: begin
+            // place the byte transmitter with the IDCODE register and start to shift it onto TDO. 
+            if (!idcode_out_done) begin
+            end else begin
+              current_state <= ShiftDr;
+            end
+          end
         endcase
         ShiftIr:  // 7
         case (tms)
@@ -204,9 +257,10 @@ module jtag (
     `HAPPENS_BEFORE(UpdateDr, RunTestOrIdle)
     `HAPPENS_BEFORE(UpdateIr, SelectDrScan)
     `HAPPENS_BEFORE(UpdateIr, RunTestOrIdle)
-    // This state is broken for unknown reasons.
+    // This state transition test is broken for unknown reasons.
     /*`HAPPENS_BEFORE(SelectIrScan, TestLogicReset) */
 
   end
 `endif
 endmodule
+`endif

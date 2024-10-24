@@ -5,36 +5,59 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles
 
-
+#    .tck(ui_in[0]),
+#    .tdi(ui_in[1]),
+#    .tms(ui_in[2]),
+#    .trst(ui_in[3]),
 @cocotb.test()
-async def test_project(dut):
-    dut._log.info("Start")
+async def test_rms_five_high_for_reset(dut):
+        dut._log.info("Start")
+        clock = Clock(dut.clk, 3, units="us")
+        cocotb.start_soon(clock.start())
+        dut._log.info("Reset")
+        dut.ena.value = 1
+        dut.ui_in.value = 0
+        dut.uio_in.value = 0
+        dut.rst_n.value = 0
+        await ClockCycles(dut.clk, 1)
+        dut.rst_n.value = 1
+        await ClockCycles(dut.clk, 1)
 
-    # Set the clock period to 10 us (100 KHz)
-    clock = Clock(dut.clk, 10, units="us")
-    cocotb.start_soon(clock.start())
+        # Drive TRST and TCK high then low to reset the design.
+        dut.ui_in.value = 0b0000_1001
+        await ClockCycles(dut.clk, 1)
+        dut.ui_in.value = 0b0000_0000
+        await ClockCycles(dut.clk, 1)
+        assert dut.uo_out.value == 0x0
 
-    # Reset
-    dut._log.info("Reset")
-    dut.ena.value = 1
-    dut.ui_in.value = 0
-    dut.uio_in.value = 0
-    dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
-    dut.rst_n.value = 1
+        # Drive TMS high then low for five cycles to put us into reset.
+        dut.ui_in.value = 0b0000_0111
+        await ClockCycles(dut.clk, 1)
+        dut.ui_in.value = 0b0000_0110
+        await ClockCycles(dut.clk, 1)
 
-    dut._log.info("Test project behavior")
+        dut.ui_in.value = 0b0000_0111
+        await ClockCycles(dut.clk, 1)
+        dut.ui_in.value = 0b0000_0110
+        await ClockCycles(dut.clk, 1)
 
-    # Set the input values you want to test
-    dut.ui_in.value = 20
-    dut.uio_in.value = 30
+        dut.ui_in.value = 0b0000_0111
+        await ClockCycles(dut.clk, 1)
+        dut.ui_in.value = 0b0000_0110
+        await ClockCycles(dut.clk, 1)
 
-    # Wait for one clock cycle to see the output values
-    await ClockCycles(dut.clk, 1)
+        dut.ui_in.value = 0b0000_0111
+        await ClockCycles(dut.clk, 1)
+        dut.ui_in.value = 0b0000_0110
+        await ClockCycles(dut.clk, 1)
 
-    # The following assersion is just an example of how to check the output values.
-    # Change it to match the actual expected output of your module:
-    assert dut.uo_out.value == 50
+        dut.ui_in.value = 0b0000_0111
+        await ClockCycles(dut.clk, 1)
+        dut.ui_in.value = 0b0000_0110
+        # At this point, the design is in reset but 
+        # the interrupt is also firing on all the other pins.
+        assert dut.uo_out.value == 0xFE
 
-    # Keep testing the module by changing the input values, waiting for
-    # one or more clock cycles, and asserting the expected output values.
+        await ClockCycles(dut.clk, 1)
+        assert dut.uo_out.value == 0x0
+
