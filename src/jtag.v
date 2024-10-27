@@ -5,6 +5,7 @@
 `timescale 1us / 100 ns
 
 `include "byte_transmitter.v"
+`include "mux_2_1.v"
 
 // Ensures that the first_state happens before the second_state.
 // We use a label as a breadcrumb in case an invalid state is asserted
@@ -19,14 +20,15 @@ module jtag (
     input wire tdi,
     output wire tdo,
     input wire tms,
-    input wire trst,
+    input wire trst_n,
     input wire reset, // comes from main domain clock.
     output in_reset
 );
 
-  // IDCODE of our jtag device.
-  localparam [31:0] IDCODE = 32'hFAF0;
+  wire trst;
+  assign trst = ~trst_n;
 
+  // TAP controller state
   localparam [4:0] TestLogicReset = 5'h0;
   localparam [4:0] RunTestOrIdle = 5'h1;
   localparam [4:0] SelectDrScan = 5'h2;
@@ -45,11 +47,24 @@ module jtag (
   localparam [4:0] UpdateIr = 5'h15;
 
   reg [4:0] current_state;
+
+  // IR Instruction values
+  localparam [3:0] Abort  = 4'b1000;
+  localparam [3:0] IdCode = 4'b1110;
+  localparam [3:0] Bypass = 4'b1111;
+
+  reg [3:0] current_ir_instruction;
+
+  // DR Register containing the IDCODE of our jtag device.
+  localparam [31:0] IdCodeDrRegister = 32'hFAF0;
+
   reg r_in_reset;
-  //
+  // whether a reset in the main design has been seen.
   wire r_in_reset_from_main_clk;
   assign in_reset = r_in_reset;
+
   // for checking that the TAP state machine is in reset at the right time.
+  // TODO: move this behind an `ifdef FORMAL and prefix with `f_`
   reg [4:0] tms_reset_check;
   reg [7:0] cycles;
 
@@ -59,11 +74,14 @@ module jtag (
 
   byte_transmitter id_byte_transmitter(
     .clk(tck),
-    .reset(~trst),
+    .reset(trst), // TODO: is TRST is active low so always high?
     .enable(1'b1), // TODO: this is where mux goes.
-    .in(IDCODE),
+    .in(IdCodeDrRegister),
     .out(transmitter_channel), // make this another wire.
     .done(idcode_out_done));
+
+  wire reset_;
+  assign reset_ = ~trst;
 
 reg r_output_selector_transmitter;  // 1 means TAP controller, 0 means byte transmitter
 mux_2_1 output_mux (
@@ -77,15 +95,18 @@ mux_2_1 output_mux (
   // a small synchronizer.
   // A single cycle pulse on output for each pulse on input:
   (* ASYNC_REG = "TRUE" *) reg [2:0] sync;
-  always @(posedge tck) sync <= (sync << 1) | {1'b0, 1'b0, reset};
+  always @(posedge tck) begin
+    sync <= (sync << 1) | {1'b0, 1'b0, reset};
+  end
   assign r_in_reset_from_main_clk = sync[1] & !sync[2];
 
   always @(posedge tck) begin
-    if (trst | r_in_reset_from_main_clk) begin
-      current_state <= TestLogicReset;  // 0
+    if (trst) begin
+      current_state <= TestLogicReset;  // State 0
       tms_reset_check <= 5'b0_0000;
       cycles <= 0;
       r_in_reset <= 1;
+      current_ir_instruction <= 4'b1110; // IDCODE is the default instruction.
       r_output_selector_transmitter <= 1; // by default the tap controller writes
       tap_channel <= 0;
     end else begin
@@ -99,7 +120,6 @@ mux_2_1 output_mux (
           r_in_reset <= 1;
           tms_reset_check <= 5'b0_0000;
           tap_channel <= 0;
-
           case (tms)
             1: current_state <= TestLogicReset;
             default: current_state <= RunTestOrIdle;
@@ -131,15 +151,25 @@ mux_2_1 output_mux (
           default: current_state <= ShiftIr;
         endcase
         ShiftDr:  // 6
+        // in the Shift-DR state, this data is shifted out, least significant bit first
         // Pretty sure this means connect a shift register to TDO and drain it
         case (tms)
           1: current_state <= Exit1Dr;
-          default: begin
-            // place the byte transmitter with the IDCODE register and start to shift it onto TDO. 
-            if (!idcode_out_done) begin
-            end else begin
+          default: begin /*
+            case (current_ir_instruction)
+              IdCode:  begin
+                // enable the idcode byte transmitter
+                // place the byte transmitter with the IDCODE register and start to shift it onto TDO. 
+              if (!idcode_out_done) begin
+                current_state <= ShiftDr;
+              end else begin
+                current_state <= Exit1Dr; // Not sure if this is correct.
+                end
+              end
+            default: begin
               current_state <= ShiftDr;
             end
+            endcase */
           end
         endcase
         ShiftIr:  // 7

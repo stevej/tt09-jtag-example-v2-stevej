@@ -37,7 +37,7 @@ module tt_um_jtag_example_stevej (
     .tck(ui_in[0]),
     .tdi(ui_in[1]),
     .tms(ui_in[2]),
-    .trst(ui_in[3]),
+    .trst_n(ui_in[3]),
     .tdo(tdo),
     .reset(reset),
     .in_reset(jtag_in_reset));
@@ -56,7 +56,6 @@ minipit minipit0 (
     .counter_set(counter_set),
     .interrupting(interrupting)
 );
-
 
   // Set unused wires
   assign uio_out[7:1] = 7'b000_0000;

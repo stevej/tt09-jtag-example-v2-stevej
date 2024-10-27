@@ -19,7 +19,11 @@ cover: smtbmc z3
 read -formal jtag.v
 prep -top jtag
 memory_map -rom-only
+# use this to help track down PREUNSAT, only works on a single module at a time.
+# hierarchy -check; proc; opt
+# sat -prove-asserts -set-assumes
 
 [files]
 jtag.v
 byte_transmitter.v
+mux_2_1.v
