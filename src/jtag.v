@@ -56,7 +56,7 @@ module jtag (
   reg [3:0] current_ir_instruction;
 
   // DR Register containing the IDCODE of our jtag device.
-  localparam [31:0] IdCodeDrRegister = 32'hFAF0;
+  localparam [31:0] IdCodeDrRegister = 32'hFAF01;
 
   reg r_in_reset;
   // whether a reset in the main design has been seen.
@@ -72,16 +72,15 @@ module jtag (
   reg transmitter_channel; // for byte_transmitter to write to TDO
   reg tap_channel; // for TAP controller to write to TDO
 
+  reg byte_transmitter_enable;
+  reg reset_byte_transmitter;
   byte_transmitter id_byte_transmitter(
     .clk(tck),
-    .reset(trst), // TODO: is TRST is active low so always high?
-    .enable(1'b1), // TODO: this is where mux goes.
+    .reset(trst | reset_byte_transmitter), // TODO: We need to be able to reset the byte_counter?
+    .enable(byte_transmitter_enable),
     .in(IdCodeDrRegister),
     .out(transmitter_channel), // make this another wire.
     .done(idcode_out_done));
-
-  wire reset_;
-  assign reset_ = ~trst;
 
 reg r_output_selector_transmitter;  // 1 means TAP controller, 0 means byte transmitter
 mux_2_1 output_mux (
@@ -109,6 +108,8 @@ mux_2_1 output_mux (
       current_ir_instruction <= 4'b1110; // IDCODE is the default instruction.
       r_output_selector_transmitter <= 1; // by default the tap controller writes
       tap_channel <= 0;
+      byte_transmitter_enable <= 0;
+      reset_byte_transmitter <= 0;
     end else begin
       r_in_reset <= 0;
       tms_reset_check <= tms_reset_check << 1;
@@ -155,9 +156,11 @@ mux_2_1 output_mux (
         // Pretty sure this means connect a shift register to TDO and drain it
         case (tms)
           1: current_state <= Exit1Dr;
-          default: begin /*
+          default: begin 
             case (current_ir_instruction)
               IdCode:  begin
+                r_output_selector_transmitter <= 0;
+                byte_transmitter_enable <= 1;
                 // enable the idcode byte transmitter
                 // place the byte transmitter with the IDCODE register and start to shift it onto TDO. 
               if (!idcode_out_done) begin
@@ -169,7 +172,7 @@ mux_2_1 output_mux (
             default: begin
               current_state <= ShiftDr;
             end
-            endcase */
+            endcase
           end
         endcase
         ShiftIr:  // 7

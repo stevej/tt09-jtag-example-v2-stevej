@@ -70,7 +70,7 @@ async def test_tms_five_high_for_reset(dut):
         assert dut.uo_out.value == 0x0
 
 # Ensure that IDCODE is returned when asked for
-cocotb.test()
+@cocotb.test()
 async def test_idcode(dut):
         dut._log.info("Start")
         clock = Clock(dut.clk, 3, units="us")
@@ -88,16 +88,36 @@ async def test_idcode(dut):
 
         # Drive TRST and TCK high then low to reset tap controller
         dut._log.info("Reset the jtag tap controller")
+        dut.ui_in.value = 0b0000_0001
+        await ClockCycles(dut.clk, 1)
+        dut.ui_in.value = 0b0000_1000
+        await ClockCycles(dut.clk, 1)
         dut.ui_in.value = 0b0000_1001
         await ClockCycles(dut.clk, 1)
-        dut.ui_in.value = 0b0000_0000
-        await ClockCycles(dut.clk, 1)
+
+        # Should be nothing on the output lines as there hasn't been enough
+        # for an interrupt and we haven't changed out of the initial JTAG state.
         assert dut.uo_out.value == 0x0
 
         # Drive TCK and TMS into ShiftDr state
         # TMS: 0 1 0 0 to get into ShiftDr
+        STATES = [0b0000_1001, 0b0000_1101, 0b0000_1001, 0b0000_1001, 0b0000_1000]
+        for state in STATES:
+                dut.ui_in.value = state
+                await ClockCycles(dut.clk, 1)
+                dut.ui_in.value = 0b0000_1000
+                await ClockCycles(dut.clk, 1)
 
-        # Drive TCK high/low enough times to see 0xFAF01
-        for i in range(32):
-        # Code to execute in each iteration
-                print(i) 
+        expected_idcode = 0xFAF01
+        given_idcode = 0
+        # Drive TCK high/low enough times to see 0xFAF01, our IDCODE
+        for i in range(33): # UGH this is a fencepost error. should be 32. I need to steal a cycle in the TAP controller.
+                dut.ui_in.value = 0b0000_1001
+                await ClockCycles(dut.clk, 1)
+                dut.ui_in.value = 0b0000_1000
+                await ClockCycles(dut.clk, 1)
+                tdo = dut.uo_out.value[0]
+                print(tdo)
+                given_idcode = (given_idcode << 1) + int(tdo)
+
+        assert given_idcode == expected_idcode

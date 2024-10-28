@@ -16,6 +16,7 @@ module byte_transmitter (
     output wire done
 );
 
+  reg [31:0] f_total_read;
   reg [5:0] byte_count;
   reg r_out;
   assign out = r_out;
@@ -26,14 +27,18 @@ module byte_transmitter (
     if (reset) begin
       byte_count <= 6'h20;
       r_done <= 0;
+      r_out <= 0;
+      f_total_read <= 0;
     end else begin
       if (enable) begin
         if (byte_count > 0) begin
+          f_total_read <= f_total_read + 1;
           r_out <= in[byte_count - 1];
           byte_count <= byte_count - 1;
-       end else begin
-         r_done <= 1;
-       end
+        end else begin
+          byte_count <= 6'h20;
+          r_done <= 1;
+        end
       end
     end
   end
@@ -50,11 +55,13 @@ module byte_transmitter (
   always @(posedge clk) begin
     assume(reset);
 
-    if (f_past_valid && done) begin
+    if (f_past_valid && enable && done) begin
+      assert(f_total_read == 32); // We've drained the entire thing.
       assert(byte_count == 0);
+      assert(r_out != 1'bX); // Learned from the paper: 'Being More Assertive with Your X'
     end
 
-    if (f_past_valid && byte_count == 0) begin
+    if (f_past_valid && enable && byte_count == 0) begin
       assert(done);
     end
   end
