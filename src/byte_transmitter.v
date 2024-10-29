@@ -34,6 +34,9 @@ module byte_transmitter (
         if (byte_count > 0) begin
           f_total_read <= f_total_read + 1;
           r_out <= in[byte_count - 1];
+          `ifdef FORMAL
+            assert(r_out != 1'bX);
+          `endif
           byte_count <= byte_count - 1;
         end else begin
           byte_count <= 6'h20;

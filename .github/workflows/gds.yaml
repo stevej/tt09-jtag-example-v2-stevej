@@ -27,12 +27,20 @@ jobs:
 
   gl_test:
     needs: gds
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: checkout repo
         uses: actions/checkout@v4
         with:
           submodules: recursive
+
+      - name: Install iverilog
+        shell: bash
+        run: |
+          apt-get -qq uninstall iverilog
+          wget https://github.com/htfab/iverilog/releases/download/13.0-git-d8c3c51/iverilog_13.0-git-d8c3c51a-1_amd64.deb
+          sudo apt-get update -y
+          sudo apt-get install -y ./iverilog_13.0-git-d8c3c51a-1_amd64.deb
 
       - name: GL test
         uses: TinyTapeout/tt-gds-action/gl_test@tt09

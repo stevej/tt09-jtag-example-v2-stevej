@@ -94,6 +94,8 @@ async def test_idcode(dut):
         await ClockCycles(dut.clk, 1)
         dut.ui_in.value = 0b0000_1001
         await ClockCycles(dut.clk, 1)
+        dut.ui_in.value = 0b0000_0000
+        await ClockCycles(dut.clk, 1)
 
         # Should be nothing on the output lines as there hasn't been enough
         # for an interrupt and we haven't changed out of the initial JTAG state.
