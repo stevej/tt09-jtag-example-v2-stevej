@@ -37,7 +37,7 @@ jobs:
       - name: Install iverilog
         shell: bash
         run: |
-          apt-get -qq uninstall iverilog
+          apt-get -qq remove iverilog
           wget https://github.com/htfab/iverilog/releases/download/13.0-git-d8c3c51/iverilog_13.0-git-d8c3c51a-1_amd64.deb
           sudo apt-get update -y
           sudo apt-get install -y ./iverilog_13.0-git-d8c3c51a-1_amd64.deb
