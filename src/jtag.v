@@ -162,7 +162,7 @@ module jtag (
           endcase
         end
         ShiftDr: begin  // 6
-          tap_channel <= 0;
+          if (~byte_transmitter_enable) tap_channel <= 0;
           // in the Shift-DR state, this data is shifted out, least significant bit first
           // Pretty sure this means connect a shift register to TDO and drain it
           case (tms)
@@ -173,7 +173,7 @@ module jtag (
                   // place the byte transmitter with the IDCODE register and start to shift it onto TDO. 
                   r_output_selector_transmitter <= 0;
                   byte_transmitter_enable <= 1;
-                  if (!idcode_out_done) begin
+                  if (~idcode_out_done) begin
                     current_state <= ShiftDr;
                   end else begin
                     byte_transmitter_enable <= 0;
