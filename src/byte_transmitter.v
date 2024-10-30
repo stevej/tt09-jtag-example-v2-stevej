@@ -16,7 +16,9 @@ module byte_transmitter (
     output wire done
 );
 
-  reg [31:0] f_total_read;
+`ifdef FORMAL
+  reg [5:0] f_total_written;
+`endif
   reg [5:0] byte_count;
   reg r_out;
   assign out = r_out;
@@ -28,15 +30,17 @@ module byte_transmitter (
       byte_count <= 6'h20;
       r_done <= 0;
       r_out <= 0;
-      f_total_read <= 0;
+`ifdef FORMAL
+      f_total_written <= 0;
+`endif
     end else begin
       if (enable) begin
         if (byte_count > 0) begin
-          f_total_read <= f_total_read + 1;
+`ifdef FORMAL
+          f_total_written <= f_total_written + 1;
+          assert(r_out != 1'bX);
+`endif
           r_out <= in[byte_count - 1];
-          `ifdef FORMAL
-            assert(r_out != 1'bX);
-          `endif
           byte_count <= byte_count - 1;
         end else begin
           byte_count <= 6'h20;
@@ -59,13 +63,14 @@ module byte_transmitter (
     assume(reset);
 
     if (f_past_valid && enable && done) begin
-      assert(f_total_read == 32); // We've drained the entire thing.
+      assert(f_total_written == 32); // We've drained the entire buffer.
       assert(byte_count == 0);
-      assert(r_out != 1'bX); // Learned from the paper: 'Being More Assertive with Your X'
+      assert(r_out != 1'bX);
     end
 
     if (f_past_valid && enable && byte_count == 0) begin
       assert(done);
+      assert(f_total_written == 32);
     end
   end
 
