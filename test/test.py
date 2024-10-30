@@ -124,6 +124,7 @@ async def test_idcode(dut):
                 dut.ui_in.value = 0b0000_1000
                 await ClockCycles(dut.clk, 1)
                 tdo = dut.uo_out.value[7]
+                print(dut.uo_out.value)
                 given_idcode = (given_idcode << 1) + int(tdo)
 
         assert given_idcode == expected_idcode
