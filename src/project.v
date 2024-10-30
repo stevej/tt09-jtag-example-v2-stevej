@@ -28,29 +28,39 @@ module tt_um_jtag_example_stevej (
 
   wire tdo;
   wire interrupting;
-  assign uo_out = {interrupting, interrupting, interrupting, interrupting, interrupting, interrupting, interrupting, tdo};
+  assign uo_out = {
+    interrupting,
+    interrupting,
+    interrupting,
+    interrupting,
+    interrupting,
+    interrupting,
+    interrupting,
+    tdo
+  };
   wire reset;
   assign reset = ~rst_n;
 
-  jtag jtag0(
-    .tck(ui_in[0]),
-    .tdi(ui_in[1]),
-    .tms(ui_in[2]),
-    .trst_n(ui_in[3]),
-    .tdo(tdo),
-    .reset(reset));
+  jtag jtag0 (
+      .tck(ui_in[0]),
+      .tdi(ui_in[1]),
+      .tms(ui_in[2]),
+      .trst_n(ui_in[3]),
+      .tdo(tdo),
+      .reset(reset)
+  );
 
-// A hard configured interrupt rising high every 10 cycles for 1 cycle.
-minipit minipit0 (
-    .clk(clk),
-    .rst_n(rst_n),
-    .write_enable(1'b1),
-    .repeating(1'b1),
-    .counter_high(8'b0),
-    .counter_low(8'hA),
-    .divider_on(1'b0),
-    .interrupting(interrupting)
-);
+  // A hard configured interrupt rising high every 10 cycles for 1 cycle.
+  minipit minipit0 (
+      .clk(clk),
+      .rst_n(rst_n),
+      .write_enable(1'b1),
+      .repeating(1'b1),
+      .counter_high(8'b0),
+      .counter_low(8'hA),
+      .divider_on(1'b0),
+      .interrupting(interrupting)
+  );
 
   // Set unused wires
   //assign uio_out[7:1] = 7'b000_0000;

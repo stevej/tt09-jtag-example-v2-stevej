@@ -37,9 +37,9 @@ module byte_transmitter (
         if (byte_count > 0) begin
 `ifdef FORMAL
           f_total_written <= f_total_written + 1;
-          assert(r_out != 1'bX);
+          assert (r_out != 1'bX);
 `endif
-          r_out <= in[byte_count - 1];
+          r_out <= in[byte_count-1];
           byte_count <= byte_count - 1;
         end else begin
           byte_count <= 6'h20;
@@ -59,17 +59,17 @@ module byte_transmitter (
   always @(posedge clk) f_past_valid <= 1;
 
   always @(posedge clk) begin
-    assume(reset);
+    assume (reset);
 
     if (f_past_valid && enable && done) begin
-      assert(f_total_written == 32); // We've drained the entire buffer.
-      assert(byte_count == 0);
-      assert(r_out != 1'bX);
+      assert (f_total_written == 32);  // We've drained the entire buffer.
+      assert (byte_count == 0);
+      assert (r_out != 1'bX);
     end
 
     if (f_past_valid && enable && byte_count == 0) begin
-      assert(done);
-      assert(f_total_written == 32);
+      assert (done);
+      assert (f_total_written == 32);
     end
   end
 

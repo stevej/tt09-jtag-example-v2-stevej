@@ -19,7 +19,7 @@ module minipit (
   reg  r_interrupting;
   wire counter_set;
   reg  r_counter_set;
-  assign counter_set = r_counter_set;
+  assign counter_set  = r_counter_set;
 
   assign interrupting = r_interrupting;
 
@@ -28,13 +28,13 @@ module minipit (
   reg [15:0] current_count;
 
   // A counter to use when the divider is enabled
-  reg [7:0] divider_count;
+  reg [ 7:0] divider_count;
 
   always @(posedge clk) begin
     if (reset) begin
-      counter <= 10; // TODO: don't auto-set a counter
+      counter <= 10;  // TODO: don't auto-set a counter
       current_count <= 0;
-      r_counter_set <= 1; // TODO: don't auto-enable a default counter
+      r_counter_set <= 1;  // TODO: don't auto-enable a default counter
       divider_count <= 0;
       r_interrupting <= 0;
     end else begin
