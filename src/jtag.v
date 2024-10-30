@@ -2,7 +2,6 @@
 `define _JTAG_
 
 `default_nettype none
-`timescale 1us / 100 ns
 
 `include "byte_transmitter.v"
 `include "mux_2_1.v"

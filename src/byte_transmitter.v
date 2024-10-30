@@ -2,7 +2,6 @@
 `define _BYTE_TRANSMITTER_
 
 `default_nettype none
-`timescale 1us / 100 ns
 
 // Given a byte, writes out 1 bit at a time while enable is high.
 // Assumes the caller is tracking when 8 bits is sent.
