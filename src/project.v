@@ -26,7 +26,6 @@ module tt_um_jtag_example_stevej (
   assign uio_out = 0;
   assign uio_oe  = 0;
 
-  wire jtag_in_reset;
   wire tdo;
   wire interrupting;
   assign uo_out = {interrupting, interrupting, interrupting, interrupting, interrupting, interrupting, interrupting, tdo};
@@ -39,10 +38,7 @@ module tt_um_jtag_example_stevej (
     .tms(ui_in[2]),
     .trst_n(ui_in[3]),
     .tdo(tdo),
-    .reset(reset),
-    .in_reset(jtag_in_reset));
-
-wire counter_set;
+    .reset(reset));
 
 // A hard configured interrupt rising high every 10 cycles for 1 cycle.
 minipit minipit0 (
@@ -53,12 +49,11 @@ minipit minipit0 (
     .counter_high(8'b0),
     .counter_low(8'hA),
     .divider_on(1'b0),
-    .counter_set(counter_set),
     .interrupting(interrupting)
 );
 
   // Set unused wires
-  assign uio_out[7:1] = 7'b000_0000;
+  //assign uio_out[7:1] = 7'b000_0000;
 
   // List all unused inputs to prevent warnings
   wire _unused = &{ena, ui_in, uio_in};

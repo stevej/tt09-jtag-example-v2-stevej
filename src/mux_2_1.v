@@ -11,7 +11,7 @@ module mux_2_1 (
     output out
 );
 
-  assign out = selector ? one : two;
+  assign out = (selector) ? one : two;
 
 endmodule
 `endif

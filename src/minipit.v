@@ -12,15 +12,15 @@ module minipit (
     input [7:0] counter_high,
     input [7:0] counter_low,
     input divider_on,
-    output counter_set,
     output wire interrupting
 );
 
   wire reset = !rst_n;
 
   reg  r_interrupting;
+  wire counter_set;
   reg  r_counter_set;
-  assign counter_set  = r_counter_set;
+  assign counter_set = r_counter_set;
 
   assign interrupting = r_interrupting;
 
