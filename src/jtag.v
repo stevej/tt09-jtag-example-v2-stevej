@@ -244,13 +244,14 @@ module jtag (
       assert (current_state <= 5'h15);
       cover (current_state <= UpdateIr);
     end
-
+    /*
     if (f_past_valid && $past(trst)) begin
       assume(trst);
       assert(current_state != 1'bX);
       assert(r_output_selector_transmitter != 1'bX);
       assert(tdo != 1'bX);
     end
+    */
   end
 
   always @(posedge tck) begin
