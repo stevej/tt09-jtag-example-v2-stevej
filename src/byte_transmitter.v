@@ -38,6 +38,7 @@ module byte_transmitter (
 `ifdef FORMAL
           f_total_written <= f_total_written + 1;
           assert (r_out != 1'bX);
+          assert (in[byte_count-1] != 1'bX);
 `endif
           r_out <= in[byte_count-1];
           byte_count <= byte_count - 1;

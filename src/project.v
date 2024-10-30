@@ -28,16 +28,15 @@ module tt_um_jtag_example_stevej (
 
   wire tdo;
   wire interrupting;
-  assign uo_out = {
-    interrupting,
-    interrupting,
-    interrupting,
-    interrupting,
-    interrupting,
-    interrupting,
-    interrupting,
-    tdo
-  };
+  assign uo_out[7] = interrupting;
+  assign uo_out[6] = interrupting;
+  assign uo_out[5] = interrupting;
+  assign uo_out[4] = interrupting;
+  assign uo_out[3] = interrupting;
+  assign uo_out[2] = interrupting;
+  assign uo_out[1] = interrupting;
+  assign uo_out[0] = tdo;
+
   wire reset;
   assign reset = ~rst_n;
 
