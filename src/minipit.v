@@ -25,32 +25,26 @@ module minipit (
   reg [15:0] counter;
   reg [15:0] current_count;
 
+  wire counter_tripped;
+  assign counter_tripped = enable && r_counter_set && (current_count == (counter - 16'h1));
+
   always @(posedge clk) begin
     if (!rst_n) begin
       counter <= 16'd10;  // TODO: don't auto-set a counter
       current_count <= 16'd0;
       r_counter_set <= 1;  // TODO: don't auto-enable a default counter
       r_interrupting <= 0;
-    end else if (enable) begin
-      if (write_enable) begin
-        counter <= {counter_high, counter_low};
-      end else begin
-        r_counter_set <= 1;
-      end
+      counter <= 16'hA;
+      r_counter_set <= 1;
+    end else begin
+      current_count <= current_count + 1;
 
-      if (counter_set) begin
-        current_count <= current_count + 1;
-      end else begin
-        current_count <= current_count;
-      end
-
-      if (counter_set && (current_count == (counter - 1))) begin
+      if (counter_tripped) begin
         // pull interrupt line high for one clock cycle
         r_interrupting <= 1;
         if (repeating) begin
           current_count <= 0;
         end
-
       end else begin
         r_interrupting <= 0;
       end

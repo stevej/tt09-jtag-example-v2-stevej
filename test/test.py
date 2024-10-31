@@ -20,8 +20,14 @@ async def test_minipit_fires_every_ten_cycles(dut):
 
         await ClockCycles(dut.clk, 1)
         dut.rst_n.value = 0
+        # Pulling TRST low
+        dut.ui_in.value = 0b0000_0000
+
         await ClockCycles(dut.clk, 1)
         dut.rst_n.value = 1
+        # Pulling TRST high again
+        dut.ui_in.value = 0b0000_1000
+
         # We need one cycle for interrupt setup
         await ClockCycles(dut.clk, 1)
         # TODO: fix uo_out[7] being X
@@ -29,6 +35,8 @@ async def test_minipit_fires_every_ten_cycles(dut):
         assert dut.uo_out.value[0] == 0x0
         # After 10 clock cycles, minipit fires
         for i in range(5):
+                # GATES=yes needs 11 due to what looks like latching in comparison
+                # GATES=no needs 10
                 await ClockCycles(dut.clk, 10)
                 assert dut.uo_out.value[0] == 0x1
 
