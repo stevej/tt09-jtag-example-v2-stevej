@@ -51,10 +51,8 @@ module tt_um_jtag_example_stevej (
       .clk(clk),
       .rst_n(rst_n),
       .enable(ena),
-      .write_enable(1'b1),
       .repeating(1'b1),
-      .counter_high(8'b0),  // 0x0 + 0xA == 10 decimal
-      .counter_low(8'hA),
+      .counter(16'hA),
       .interrupting(interrupting)
   );
 
