@@ -17,9 +17,6 @@ RUN wget https://github.com/htfab/iverilog/archive/refs/tags/13.0-git-d8c3c51.ta
 RUN tar zxf 13.0-git-d8c3c51.tar.gz && cd /iverilog-13.0-git-d8c3c51 && \
     sh autoconf.sh && ./configure && make && make install
 
-#RUN wget https://github.com/htfab/iverilog/releases/download/13.0-git-d8c3c51/iverilog_13.0-git-d8c3c51a-1_amd64.deb
-#RUN apt-get install -y -q --no-install-recommends ./iverilog_13.0-git-d8c3c51a-1_amd64.deb
-
 COPY test/requirements.txt /ttsetup/test_requirements.txt
 COPY .devcontainer/copy_tt_support_tools.sh /ttsetup
 
