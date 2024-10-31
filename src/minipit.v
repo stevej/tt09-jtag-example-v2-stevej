@@ -32,8 +32,8 @@ module minipit (
 
   always @(posedge clk) begin
     if (reset) begin
-      counter <= 10;  // TODO: don't auto-set a counter
-      current_count <= 0;
+      counter <= 16'd10;  // TODO: don't auto-set a counter
+      current_count <= 16'd0;
       r_counter_set <= 1;  // TODO: don't auto-enable a default counter
       divider_count <= 0;
       r_interrupting <= 0;
@@ -56,7 +56,7 @@ module minipit (
         current_count <= current_count;
       end
 
-      if (counter_set && (current_count == counter)) begin
+      if (counter_set && (current_count == (counter - 1))) begin
         // pull interrupt line high for one clock cycle
         r_interrupting <= 1;
         if (repeating) begin

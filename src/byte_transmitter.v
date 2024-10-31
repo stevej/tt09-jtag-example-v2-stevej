@@ -9,7 +9,7 @@ module byte_transmitter (
     input clk,
     input reset,
     input enable,
-    // TODO: make [31:0] configurable
+    // TODO: make size configurable
     input wire [31:0] in,  // byte_buffer
     output wire out,
     output wire done
@@ -38,7 +38,7 @@ module byte_transmitter (
 `ifdef FORMAL
           f_total_written <= f_total_written + 1;
           assert (r_out != 1'bX);
-          assert (byte_count != 1'bX);
+          assert (byte_count != 5'bX_XXXX);
           assert (in[byte_count-1] != 1'bX);
 `endif
           r_out <= in[byte_count-1];

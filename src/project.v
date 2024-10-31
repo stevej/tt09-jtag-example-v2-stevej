@@ -37,9 +37,6 @@ module tt_um_jtag_example_stevej (
   assign uo_out[1] = interrupting;
   assign uo_out[0] = tdo;
 
-  wire reset;
-  assign reset = ~rst_n;
-
   jtag jtag0 (
       .tck(ui_in[0]),
       .tdi(ui_in[1]),

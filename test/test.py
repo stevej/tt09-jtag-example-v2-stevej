@@ -40,28 +40,28 @@ async def test_tms_five_high_for_reset(dut):
         await ClockCycles(dut.clk, 1)
         dut.ui_in.value = 0b0000_1000
         await ClockCycles(dut.clk, 1)
+        dut.ui_in.value = 0b0000_1001
+        await ClockCycles(dut.clk, 1)
+        dut.ui_in.value = 0b0000_1000
+        await ClockCycles(dut.clk, 1)
+
         assert dut.uo_out.value == 0x0
 
         # Drive TMS high then low for five cycles to put us into reset.
         dut._log.info("TMS high for five pulses to reset TAP controller")
         dut.ui_in.value = 0b0000_1111
         await ClockCycles(dut.clk, 1)
+
         dut.ui_in.value = 0b0000_1110
         await ClockCycles(dut.clk, 1)
-
         dut.ui_in.value = 0b0000_1111
         await ClockCycles(dut.clk, 1)
+
         dut.ui_in.value = 0b0000_1110
         await ClockCycles(dut.clk, 1)
-
         dut.ui_in.value = 0b0000_1111
         await ClockCycles(dut.clk, 1)
-        dut.ui_in.value = 0b0000_1110
-        await ClockCycles(dut.clk, 1)
 
-        dut.ui_in.value = 0b0000_1111
-        await ClockCycles(dut.clk, 1)
-        dut.ui_in.value = 0b0000_1110
         # At this point, the design is in reset but
         # the interrupt is also firing on all the other pins.
         assert dut.uo_out.value == 0xFE
