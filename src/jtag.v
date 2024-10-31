@@ -69,7 +69,7 @@ module jtag (
 
   reg byte_transmitter_enable;
   reg reset_byte_transmitter;
-  reg transmitter_channel;  // for byte_transmitter to write to TDO
+  wire transmitter_channel;  // for byte_transmitter to write to TDO
 
   byte_transmitter id_byte_transmitter (
       .clk(tck),
