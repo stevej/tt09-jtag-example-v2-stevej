@@ -5,6 +5,34 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles
 
+@cocotb.test()
+async def test_minipit_fires_every_ten_cycles(dut):
+        dut._log.info("Start")
+        clock = Clock(dut.clk, 3, units="us")
+        cocotb.start_soon(clock.start())
+        dut._log.info("Reset the interrupt timer")
+        dut.ena.value = 1
+        dut.ui_in.value = 0
+        dut.uio_in.value = 0
+        dut.rst_n.value = 1
+        # We start with TRST being high per the spec.
+        dut.ui_in.value = 0b0000_1000
+
+        await ClockCycles(dut.clk, 1)
+        dut.rst_n.value = 0
+        await ClockCycles(dut.clk, 1)
+        dut.rst_n.value = 1
+        # We need one cycle for interrupt setup
+        await ClockCycles(dut.clk, 1)
+        # TODO: fix uo_out[7] being X
+        #assert dut.uo_out.value == 0x0
+        assert dut.uo_out.value[0] == 0x0
+        # After 10 clock cycles, minipit fires
+        for i in range(5):
+                await ClockCycles(dut.clk, 10)
+                assert dut.uo_out.value[0] == 0x1
+
+
 # For reference, the pinout is:
 #    .tck(ui_in[0]),
 #    .tdi(ui_in[1]),
@@ -27,8 +55,6 @@ async def test_tms_five_high_for_reset(dut):
         dut.rst_n.value = 0
         await ClockCycles(dut.clk, 1)
         dut.rst_n.value = 1
-        #dut.ui_in.value = 0b0000_1000
-        #await ClockCycles(dut.clk, 1)
 
         # Drive TRST low and TCK high then low to reset tap controller
         dut._log.info("Reset the jtag tap controller")

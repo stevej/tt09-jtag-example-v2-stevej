@@ -42,6 +42,7 @@ module tt_um_jtag_example_stevej (
       .tdi(ui_in[1]),
       .tms(ui_in[2]),
       .trst_n(ui_in[3]),
+      .enable(ena),
       .tdo(tdo)
   );
 
@@ -49,16 +50,16 @@ module tt_um_jtag_example_stevej (
   minipit minipit0 (
       .clk(clk),
       .rst_n(rst_n),
+      .enable(ena),
       .write_enable(1'b1),
       .repeating(1'b1),
-      .counter_high(8'b0),
+      .counter_high(8'b0),  // 0x0 + 0xA == 10 decimal
       .counter_low(8'hA),
-      .divider_on(1'b0),
       .interrupting(interrupting)
   );
 
   // Set unused wires
-  //assign uio_out[7:1] = 7'b000_0000;
+  assign uio_out[7:1] = 7'b000_0000;
 
   // List all unused inputs to prevent warnings
   wire _unused = &{ena, ui_in, uio_in};
