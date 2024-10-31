@@ -4,10 +4,10 @@
 `default_nettype none
 
 module mux_2_1 (
-    input  one,
-    input  two,
-    input  selector,
-    output out
+    input  wire one,
+    input  wire two,
+    input  wire selector,
+    output wire out
 );
 
   assign out = (selector) ? one : two;

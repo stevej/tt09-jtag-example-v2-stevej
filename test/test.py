@@ -27,8 +27,8 @@ async def test_tms_five_high_for_reset(dut):
         dut.rst_n.value = 0
         await ClockCycles(dut.clk, 1)
         dut.rst_n.value = 1
-        dut.ui_in.value = 0b0000_1000
-        await ClockCycles(dut.clk, 1)
+        #dut.ui_in.value = 0b0000_1000
+        #await ClockCycles(dut.clk, 1)
 
         # Drive TRST low and TCK high then low to reset tap controller
         dut._log.info("Reset the jtag tap controller")

@@ -67,11 +67,13 @@ module byte_transmitter (
       assert (f_total_written == 32);  // We've drained the entire buffer.
       assert (byte_count == 0);
       assert (r_out != 1'bX);
+      assert (done != 1'bX);
     end
 
     if (f_past_valid && enable && byte_count == 0) begin
-      assert (done);
       assert (f_total_written == 32);
+      assert (done);
+      assert (r_out != 1'bX);
     end
   end
 

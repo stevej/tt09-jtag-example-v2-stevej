@@ -45,8 +45,7 @@ module tt_um_jtag_example_stevej (
       .tdi(ui_in[1]),
       .tms(ui_in[2]),
       .trst_n(ui_in[3]),
-      .tdo(tdo),
-      .reset(reset)
+      .tdo(tdo)
   );
 
   // A hard configured interrupt rising high every 10 cycles for 1 cycle.

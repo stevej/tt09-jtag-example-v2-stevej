@@ -14,13 +14,12 @@
   end;
 
 module jtag (
-    input tck,
+    input  wire tck,
     /* verilator lint_off UNUSED */
-    input wire tdi,
+    input  wire tdi,
     output wire tdo,
-    input wire tms,
-    input wire trst_n,
-    input wire reset  // comes from main domain clock.
+    input  wire tms,
+    input  wire trst_n
 );
 
   wire trst;
@@ -70,13 +69,14 @@ module jtag (
   reg byte_transmitter_enable;
   reg reset_byte_transmitter;
   wire transmitter_channel;  // for byte_transmitter to write to TDO
+  reg r_transmitter_channel;
 
   byte_transmitter id_byte_transmitter (
       .clk(tck),
       .reset(trst | reset_byte_transmitter),  // TODO: We need to be able to reset the byte_counter?
       .enable(byte_transmitter_enable),
       .in(IdCodeDrRegister),
-      .out(transmitter_channel),  // make this another wire.
+      .out(r_transmitter_channel),  // make this another wire.
       .done(idcode_out_done)
   );
 
@@ -110,6 +110,7 @@ module jtag (
       current_ir_instruction <= 4'b1110;  // IDCODE is the default instruction.
       r_output_selector_transmitter <= 1;  // by default the tap controller writes
       tap_channel <= 0;  // How can an X sneak in here?
+      r_transmitter_channel <= 0;
       byte_transmitter_enable <= 0;
       reset_byte_transmitter <= 0;
     end else begin
@@ -282,7 +283,7 @@ module jtag (
 
     if (f_past_valid && $past(trst_n)) begin
       assume (trst);
-      assert (current_state != 1'bX);
+      assert (current_state != 5'bX_XXXX);
       assert (r_output_selector_transmitter != 1'bX);
       assert (tdo != 1'bX);
     end
