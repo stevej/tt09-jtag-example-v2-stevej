@@ -9,7 +9,7 @@
 // Ensures that the first_state happens before the second_state.
 // We use a label as a breadcrumb in case an invalid state is asserted
 `define HAPPENS_BEFORE(first_state, second_state) \
-  if (f_past_valid && $past(trst) && current_state == second_state) begin \
+  if (f_past_valid && $past(trst) && trst_n && current_state == second_state) begin \
     HA_``first_state``_to_``second_state : assert ($past(current_state) == first_state); \
   end;
 
@@ -180,7 +180,8 @@ module jtag (
                   end
                 end
                 default: begin
-                  current_state <= ShiftDr;
+                  // If a bad instruction is given, go back to default state
+                  current_state <= TestLogicReset;
                 end
               endcase
             end
@@ -269,62 +270,42 @@ module jtag (
 
   always @(posedge tck) f_past_valid <= 1;
 
-  always_comb begin
-    if (!f_past_valid) begin
-      assume (trst);
-      assume (enable);
-    end
-  end
-
   always @(posedge tck) begin
     if (f_past_valid) begin
       // our state never overruns the enum values.
-      assert (current_state <= 5'h15);
+      assert (current_state < 5'h16);  // less-than or equals, not assignment
       cover (current_state <= UpdateIr);
     end
 
     if (f_past_valid && $past(trst)) begin
-      assume (trst);
-      assume (enable);
       assert (current_state == 5'b0_0000);
-      /*
-      assert (current_state != 5'bX_XXXX);
-      // TODO: the next 16 lines are a horrible crime.
-      assert (current_state[0] != 1'bX);
-      assert (current_state[1] != 1'bX);
-      assert (current_state[2] != 1'bX);
-      assert (current_state[3] != 1'bX);
-      assert (current_state[4] != 1'bX);
-      assert (current_state[5] != 1'bX);
-      assert (current_state[6] != 1'bX);
-      assert (current_state[7] != 1'bX);
-      assert (current_state[8] != 1'bX);
-      assert (current_state[9] != 1'bX);
-      assert (current_state[10] != 1'bX);
-      assert (current_state[11] != 1'bX);
-      assert (current_state[12] != 1'bX);
-      assert (current_state[13] != 1'bX);
-      assert (current_state[14] != 1'bX);
-      assert (current_state[15] != 1'bX);
-      */
-
       assert (r_output_selector_transmitter == 1'b1);
       assert (transmitter_channel == 1'b0);
       assert (tdo == 1'b0);
       assert (byte_transmitter_enable == 1'b0);
-      //assert ( != 1'bX);
     end
   end
 
+
+  /*
+  always @(posedge tck) begin
+    if (f_past_valid && $past(~trst_n) && trst_n) begin
+      cover (current_state == ShiftDr);
+      assert (tdo != 1'bX);
+    end
+  end
+*/
+
   always @(posedge tck) begin
     // Whenever TMS is high for five cycles, the design is in reset
-    if (f_past_valid && (tms_reset_check == 5'b1_1111)) begin
+    if (f_past_valid && $past(~trst_n) && trst_n && ($past(tms_reset_check) == 5'b1_1111)) begin
       assert (current_state == TestLogicReset);
     end
 
-    // TRST puts us in state 0
-    if (f_past_valid && $past(trst)) begin
+    // TRST_n low then high puts us in state 0
+    if (f_past_valid && $past(~trst_n) && trst_n) begin
       initial_state : assert (current_state == TestLogicReset);
+      assert (tdo != 1'bX);
     end
 
     //
