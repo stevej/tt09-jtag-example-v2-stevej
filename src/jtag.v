@@ -4,7 +4,6 @@
 `default_nettype none
 
 `include "byte_transmitter.v"
-`include "mux_2_1.v"
 
 // Ensures that the first_state happens before the second_state.
 // We use a label as a breadcrumb in case an invalid state is asserted
@@ -18,7 +17,7 @@ module jtag (
     /* verilator lint_off UNUSED */
     input  wire tdi,
     input  wire tms,
-    input  wire trst_n,  /* RESET */
+    input  wire trst_n,  /* TRST_N */
     input  wire enable,
     output wire tdo
 );
@@ -73,7 +72,7 @@ module jtag (
 
   byte_transmitter id_byte_transmitter (
       .clk(tck),
-      .reset(trst | reset_byte_transmitter),  // TODO: We need to be able to reset the byte_counter?
+      .reset(~trst_n | reset_byte_transmitter),
       .enable(byte_transmitter_enable),
       .in(IdCodeDrRegister),
       .out(transmitter_channel),  // make this another wire.
@@ -82,14 +81,10 @@ module jtag (
 
   bit tap_channel;  // for TAP controller to write to TDO
   bit r_output_selector_transmitter;  // 1 means TAP controller, 0 means byte transmitter
-  mux_2_1 output_mux (
-      .one(tap_channel),
-      .two(transmitter_channel),
-      .selector(r_output_selector_transmitter),
-      .out(tdo)
-  );
 
-  // Getting the reset signal from the main design clock into the 
+  assign tdo = r_output_selector_transmitter ? tap_channel : transmitter_channel;
+
+  // Getting the reset signal from the main design clock into the
   // jtag design requires us to cross domain clocks so we use
   // a small synchronizer.
   // A single cycle pulse on output for each pulse on input:
@@ -101,8 +96,10 @@ module jtag (
   assign r_in_reset_from_main_clk = sync[1] & !sync[2];
   */
 
+  bit been_reset;
+
   always @(posedge tck) begin
-    if (trst) begin
+    if (~trst_n) begin
       current_state <= TestLogicReset;  // State 0
       tms_reset_check <= 5'b0_0000;
       cycles <= 8'b0000_0000;
@@ -111,7 +108,8 @@ module jtag (
       tap_channel <= 0;  // How can an X sneak in here?
       byte_transmitter_enable <= 0;
       reset_byte_transmitter <= 0;
-    end else begin
+      been_reset <= 1;
+    end else if (enable && been_reset) begin
       current_state <= current_state;
       tms_reset_check <= tms_reset_check << 1;
       tms_reset_check[0] <= tms;
@@ -245,6 +243,8 @@ module jtag (
           current_state <= TestLogicReset;
         end
       endcase
+    end else begin
+      current_state <= TestLogicReset;
     end
   end
 

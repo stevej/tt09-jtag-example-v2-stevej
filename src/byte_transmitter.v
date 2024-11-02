@@ -32,28 +32,30 @@ module byte_transmitter (
 `ifdef FORMAL
       f_total_written <= 0;
 `endif
-    end else begin
-      if (enable) begin
-        if (byte_count > 0) begin
+    end else if (enable) begin
+      if (byte_count > 0) begin
 `ifdef FORMAL
-          f_total_written <= f_total_written + 1;
-          assert (r_out != 1'bX);
-          assert (byte_count != 5'bX_XXXX);
-          assert (byte_count[0] != 1'bX);
-          assert (byte_count[1] != 1'bX);
-          assert (byte_count[2] != 1'bX);
-          assert (byte_count[3] != 1'bX);
-          assert (byte_count[4] != 1'bX);
+        f_total_written <= f_total_written + 1;
+        assert (r_out != 1'bX);
+        assert (byte_count != 5'bX_XXXX);
+        assert (byte_count[0] != 1'bX);
+        assert (byte_count[1] != 1'bX);
+        assert (byte_count[2] != 1'bX);
+        assert (byte_count[3] != 1'bX);
+        assert (byte_count[4] != 1'bX);
 
-          assert (in[byte_count:(byte_count-1)] != 1'bX);
+        assert (in[byte_count:(byte_count-1)] != 1'bX);
 `endif
-          r_out <= in[byte_count-1];
-          byte_count <= (byte_count - 6'd1);
-        end else begin
-          byte_count <= 6'h20;
-          r_done <= 1;
-        end
+        r_out <= in[byte_count-1];
+        byte_count <= (byte_count - 6'd1);
+      end else begin
+        byte_count <= 6'h20;
+        r_done <= 1;
       end
+    end else begin
+      byte_count <= 6'h20;
+      r_done <= 0;
+      r_out <= 0;
     end
   end
 

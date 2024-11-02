@@ -26,4 +26,3 @@ memory_map -rom-only
 [files]
 jtag.v
 byte_transmitter.v
-mux_2_1.v
