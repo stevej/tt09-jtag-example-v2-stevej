@@ -149,7 +149,19 @@ module jtag (
         CaptureDr: begin  // 4
           case (tms)
             1: current_state <= Exit1Dr;
-            default: current_state <= ShiftDr;
+            default: begin
+              current_state <= ShiftDr;
+              case (current_ir_instruction)
+                IdCode: begin
+                  // place the byte transmitter with the IDCODE register and start to shift it onto TDO.
+                  r_output_selector_transmitter <= 0;
+                  byte_transmitter_enable <= 1;
+                end
+                default: begin
+                  current_state <= ShiftDr;
+                end
+              endcase
+            end
           endcase
         end
         CaptureIr: begin  // 5
@@ -166,10 +178,7 @@ module jtag (
             default: begin
               case (current_ir_instruction)
                 IdCode: begin
-                  // place the byte transmitter with the IDCODE register and start to shift it onto TDO. 
-                  r_output_selector_transmitter <= 0;
-                  byte_transmitter_enable <= 1;
-                  if (~idcode_out_done) begin
+                  if (!idcode_out_done) begin
                     current_state <= ShiftDr;
                   end else begin
                     reset_byte_transmitter <= 1;
