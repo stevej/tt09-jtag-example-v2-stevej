@@ -56,8 +56,6 @@ async def test_tms_five_high_for_reset(dut):
         dut.ui_in.value = 0
         dut.uio_in.value = 0
         dut.rst_n.value = 1
-        # We start with TRST being high per the spec.
-        dut.ui_in.value = 0b0000_1000
 
         await ClockCycles(dut.clk, 1)
         dut.rst_n.value = 0
