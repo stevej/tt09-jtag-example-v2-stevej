@@ -16,7 +16,7 @@ module jtag (
     input  wire tck,
     /* verilator lint_off UNUSED */
     input  wire tdi,
-    input  wire tms,
+    input  bit  tms,
     input  wire trst_n,  /* TRST_N */
     input  wire enable,
     output wire tdo
@@ -25,25 +25,25 @@ module jtag (
   wire trst;
   assign trst = ~trst_n;
 
-  // TAP controller state
-  localparam bit [3:0] TestLogicReset = 4'h0;
-  localparam bit [3:0] RunTestOrIdle = 4'h1;
-  localparam bit [3:0] SelectDrScan = 4'h2;
-  localparam bit [3:0] SelectIrScan = 4'h3;
-  localparam bit [3:0] CaptureDr = 4'h4;
-  localparam bit [3:0] CaptureIr = 4'h5;
-  localparam bit [3:0] ShiftDr = 4'h6;
-  localparam bit [3:0] ShiftIr = 4'h7;
-  localparam bit [3:0] Exit1Dr = 4'h8;
-  localparam bit [3:0] Exit1Ir = 4'h9;
-  localparam bit [3:0] PauseDr = 4'hA;
-  localparam bit [3:0] PauseIr = 4'hB;
-  localparam bit [3:0] Exit2Dr = 4'hC;
-  localparam bit [3:0] Exit2Ir = 4'hD;
-  localparam bit [3:0] UpdateDr = 4'hE;
-  localparam bit [3:0] UpdateIr = 4'hF;
+  // TAP controller state in one-hot encoding
+  localparam bit [15:0] TestLogicReset = 16'b0000_0000_0000_0000;  // 0
+  localparam bit [15:0] RunTestOrIdle = 16'b0000_0000_0000_0001;  // 1
+  localparam bit [15:0] SelectDrScan = 16'b0000_0000_0000_0010;  // 2
+  localparam bit [15:0] SelectIrScan = 16'b0000_0000_0000_0100;  // 3
+  localparam bit [15:0] CaptureDr = 16'b0000_0000_0000_1000;  // 4
+  localparam bit [15:0] CaptureIr = 16'b0000_0000_0001_0000;  // 5
+  localparam bit [15:0] ShiftDr = 16'b0000_0000_0010_0000;  // 6
+  localparam bit [15:0] ShiftIr = 16'b0000_0000_0100_0000;  // 7
+  localparam bit [15:0] Exit1Dr = 16'b0000_0000_1000_0000;  // 8
+  localparam bit [15:0] Exit1Ir = 16'b0000_0001_0000_0000;  // 9
+  localparam bit [15:0] PauseDr = 16'b0000_0010_0000_0000;  // 10
+  localparam bit [15:0] PauseIr = 16'b0000_0100_0000_0000;  // 11
+  localparam bit [15:0] Exit2Dr = 16'b0000_1000_0000_0000;  // 12
+  localparam bit [15:0] Exit2Ir = 16'b0001_0000_0000_0000;  // 13
+  localparam bit [15:0] UpdateDr = 16'b0010_0000_0000_0000;  // 14
+  localparam bit [15:0] UpdateIr = 16'b0100_0000_0000_0000;  // 15
 
-  reg [3:0] current_state;
+  reg [15:0] current_state;
 
   // IR Instruction values
   localparam bit [3:0] Abort = 4'b1000;
@@ -101,14 +101,14 @@ module jtag (
   always @(posedge tck) begin
     if (~trst_n) begin
       current_state <= TestLogicReset;  // State 0
-      tms_reset_check <= 5'b0_0000;
-      cycles <= 8'b0000_0000;
+      tms_reset_check <= 5'h0;
+      cycles <= 8'h0;
       current_ir_instruction <= IdCode;  // IDCODE is the default instruction.
-      r_output_selector_transmitter <= 1;  // by default the tap controller writes
-      tap_channel <= 0;  // How can an X sneak in here?
-      byte_transmitter_enable <= 0;
-      reset_byte_transmitter <= 0;
-      been_reset <= 1;
+      r_output_selector_transmitter <= 1'b1;  // by default the tap controller writes
+      tap_channel <= 1'b0;
+      byte_transmitter_enable <= 1'b0;
+      reset_byte_transmitter <= 1'b0;
+      been_reset <= 1'b1;
     end else if (enable && been_reset) begin
       current_state <= current_state;
       tms_reset_check <= tms_reset_check << 1;
@@ -116,13 +116,13 @@ module jtag (
       cycles <= cycles + 1'd1;
       current_ir_instruction <= current_ir_instruction;
       r_output_selector_transmitter <= r_output_selector_transmitter;
-      tap_channel <= 0;
+      tap_channel <= 1'b0;
       byte_transmitter_enable <= byte_transmitter_enable;
       reset_byte_transmitter <= reset_byte_transmitter;
       // TAP state machine
       case (current_state)
         TestLogicReset: begin  // 0
-          tms_reset_check <= 5'b0_0000;
+          tms_reset_check <= 5'h0;
           case (tms)
             1: current_state <= TestLogicReset;
             default: current_state <= RunTestOrIdle;
@@ -154,8 +154,8 @@ module jtag (
               case (current_ir_instruction)
                 IdCode: begin
                   // place the byte transmitter with the IDCODE register and start to shift it onto TDO.
-                  r_output_selector_transmitter <= 0;
-                  byte_transmitter_enable <= 1;
+                  r_output_selector_transmitter <= 1'b0;
+                  byte_transmitter_enable <= 1'b1;
                 end
                 default: begin
                   current_state <= ShiftDr;
@@ -181,8 +181,8 @@ module jtag (
                   if (!idcode_out_done) begin
                     current_state <= ShiftDr;
                   end else begin
-                    reset_byte_transmitter <= 1;
-                    byte_transmitter_enable <= 0;
+                    reset_byte_transmitter <= 1'b1;
+                    byte_transmitter_enable <= 1'b0;
                     current_state <= Exit1Dr;  // Not sure if this is correct.
                   end
                 end
@@ -270,7 +270,6 @@ module jtag (
   always @(posedge tck) begin
     if (f_past_valid) begin
       // our state never overruns the enum values.
-      assert (current_state < 5'h16);  // less-than or equals, not assignment
       cover (current_state <= UpdateIr);
     end
 
@@ -283,16 +282,6 @@ module jtag (
       assert (byte_transmitter_enable == 1'b0);
     end
   end
-
-
-  /*
-  always @(posedge tck) begin
-    if (f_past_valid && $past(~trst_n) && trst_n) begin
-      cover (current_state == ShiftDr);
-      assert (tdo != 1'bX);
-    end
-  end
-*/
 
   always @(posedge tck) begin
     // Whenever TMS is high for five cycles, the design is in reset

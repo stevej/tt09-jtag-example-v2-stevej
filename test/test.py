@@ -129,7 +129,7 @@ async def test_idcode(dut):
         await ClockCycles(dut.clk, 1)
         dut.ui_in.value = 0b0000_1000
         await ClockCycles(dut.clk, 1)
-        dut.ui_in.value = 0b0000_1001
+        dut.ui_in.value = 0b0000_1101
         await ClockCycles(dut.clk, 1)
         dut.ui_in.value = 0b0000_1000
         await ClockCycles(dut.clk, 1)

@@ -22,19 +22,19 @@ module minipit (
 
   always @(posedge clk) begin
     if (!rst_n) begin
-      current_count  <= 16'd0;
-      r_interrupting <= 0;
+      current_count  <= 16'h0;
+      r_interrupting <= 1'b0;
     end else begin
-      current_count <= current_count + 1;
+      current_count <= current_count + 16'h1;
 
       if (counter_tripped) begin
         // pull interrupt line high for one clock cycle
-        r_interrupting <= 1;
+        r_interrupting <= 1'b1;
         if (repeating) begin
-          current_count <= 0;
+          current_count <= 16'h0;
         end
       end else begin
-        r_interrupting <= 0;
+        r_interrupting <= 1'b0;
       end
     end
   end
