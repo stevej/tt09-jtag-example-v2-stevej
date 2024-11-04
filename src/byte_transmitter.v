@@ -24,7 +24,9 @@ module byte_transmitter (
   reg r_done;
   assign done = r_done;
 
-  always @(posedge clk) begin
+  // TDO must be written on the falling edge
+  // to avoid hold violations.
+  always @(negedge clk) begin
     if (reset) begin
       byte_count <= 6'h20;
       r_done <= 1'b0;

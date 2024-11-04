@@ -98,6 +98,10 @@ module jtag (
 
   bit been_reset;
 
+  always @(negedge tck) begin
+    if (r_output_selector_transmitter) tap_channel <= 1'b0;
+  end
+
   always @(posedge tck) begin
     if (~trst_n) begin
       current_state <= TestLogicReset;  // State 0
@@ -116,7 +120,6 @@ module jtag (
       cycles <= cycles + 1'd1;
       current_ir_instruction <= current_ir_instruction;
       r_output_selector_transmitter <= r_output_selector_transmitter;
-      tap_channel <= 1'b0;
       byte_transmitter_enable <= byte_transmitter_enable;
       reset_byte_transmitter <= reset_byte_transmitter;
       // TAP state machine
@@ -156,6 +159,13 @@ module jtag (
                   // place the byte transmitter with the IDCODE register and start to shift it onto TDO.
                   r_output_selector_transmitter <= 1'b0;
                   byte_transmitter_enable <= 1'b1;
+                end
+                Abort: begin
+                  current_state <= ShiftDr;
+                end
+                Bypass: begin
+                  // TODO: disable pins connected to the scan chain
+                  current_state <= ShiftDr;
                 end
                 default: begin
                   current_state <= ShiftDr;

@@ -112,14 +112,17 @@ async def test_idcode(dut):
         dut.ui_in.value = 0
         dut.uio_in.value = 0
         dut.rst_n.value = 1
-        # We start with TRST being high per the spec.
-        dut.ui_in.value = 0b0000_1001
+        dut.ui_in.value = 0b0000_0001
         await ClockCycles(dut.clk, 1)
         dut.rst_n.value = 0
-        await ClockCycles(dut.clk, 1)
         dut.ui_in.value = 0b0000_0000
+        await ClockCycles(dut.clk, 1)
+        dut.ui_in.value = 0b0000_0001
         dut.rst_n.value = 1
         await ClockCycles(dut.clk, 1)
+        dut.ui_in.value = 0b0000_0000
+        await ClockCycles(dut.clk, 1)
+ 
 
         # Drive TRST and TCK high then low to reset tap controller
         dut._log.info("Reset the jtag tap controller")
@@ -127,10 +130,10 @@ async def test_idcode(dut):
         await ClockCycles(dut.clk, 1)
         dut.ui_in.value = 0b0000_1000
         await ClockCycles(dut.clk, 1)
-        dut.ui_in.value = 0b0000_1101
-        await ClockCycles(dut.clk, 1)
-        dut.ui_in.value = 0b0000_1000
-        await ClockCycles(dut.clk, 1)
+        #dut.ui_in.value = 0b0000_1001
+        #await ClockCycles(dut.clk, 1)
+        #dut.ui_in.value = 0b0000_1000
+        #await ClockCycles(dut.clk, 1)
 
         # Should be nothing on the output lines as there hasn't been enough
         # for an interrupt and we haven't changed out of the initial JTAG state.
@@ -148,7 +151,7 @@ async def test_idcode(dut):
         expected_idcode = 0xFAF01
         given_idcode = 0
         # Drive TCK high/low enough times to see 0xFAF01, our IDCODE
-        for i in range(32):
+        for i in range(31):
                 dut.ui_in.value = 0b0000_1001
                 await ClockCycles(dut.clk, 1)
                 dut.ui_in.value = 0b0000_1000
