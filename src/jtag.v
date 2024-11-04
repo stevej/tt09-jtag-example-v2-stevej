@@ -13,12 +13,12 @@
   end;
 
 module jtag (
-    input  wire tck,
+    (* gclk *) input wire tck,
     /* verilator lint_off UNUSED */
-    input  wire tdi,
-    input  bit  tms,
-    input  wire trst_n,  /* TRST_N */
-    input  wire enable,
+    input wire tdi,
+    input bit tms,
+    input wire trst_n,  /* TRST_N */
+    input wire enable,
     output wire tdo
 );
 
@@ -109,7 +109,6 @@ module jtag (
       cycles <= 8'h0;
       current_ir_instruction <= IdCode;  // IDCODE is the default instruction.
       r_output_selector_transmitter <= 1'b1;  // by default the tap controller writes
-      tap_channel <= 1'b0;
       byte_transmitter_enable <= 1'b0;
       reset_byte_transmitter <= 1'b0;
       been_reset <= 1'b1;
