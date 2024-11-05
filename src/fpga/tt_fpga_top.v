@@ -24,7 +24,7 @@ module tt_fpga_top (
       .PACKAGE_PIN(uio),
       .OUTPUT_ENABLE(uio_oe),
       .D_OUT_0(uio_out),
-      .D_IN_0(uio_in),
+      .D_IN_0(uio_in)
   );
 
   tt_um_jtag_example_stevej user_project (
