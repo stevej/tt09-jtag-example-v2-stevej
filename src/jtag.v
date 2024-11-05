@@ -16,7 +16,7 @@ module jtag (
     (* gclk *) input wire tck,
     /* verilator lint_off UNUSED */
     input wire tdi,
-    input bit tms,
+    input wire tms,
     input wire trst_n,  /* TRST_N */
     input wire enable,
     output wire tdo
@@ -26,55 +26,55 @@ module jtag (
   assign trst = ~trst_n;
 
   // Debug signals to see how far we've gotten in the TAP state machine.
-  bit in_run_test_idle;
-  bit in_select_dr_scan;
-  bit in_capture_dr;
-  bit in_shift_dr;
-  bit in_exit1_dr;
+  reg in_run_test_idle;
+  reg in_select_dr_scan;
+  reg in_capture_dr;
+  reg in_shift_dr;
+  reg in_exit1_dr;
 
   // TAP controller state in one-hot encoding
-  localparam bit [15:0] TestLogicReset = 16'b0000_0000_0000_0000;  // 0
-  localparam bit [15:0] RunTestOrIdle = 16'b0000_0000_0000_0001;  // 1
-  localparam bit [15:0] SelectDrScan = 16'b0000_0000_0000_0010;  // 2
-  localparam bit [15:0] SelectIrScan = 16'b0000_0000_0000_0100;  // 4
-  localparam bit [15:0] CaptureDr = 16'b0000_0000_0000_1000;  // 8
-  localparam bit [15:0] CaptureIr = 16'b0000_0000_0001_0000;  // 10
-  localparam bit [15:0] ShiftDr = 16'b0000_0000_0010_0000;  // 20
-  localparam bit [15:0] ShiftIr = 16'b0000_0000_0100_0000;  // 40
-  localparam bit [15:0] Exit1Dr = 16'b0000_0000_1000_0000;  // 80
-  localparam bit [15:0] Exit1Ir = 16'b0000_0001_0000_0000;  // 100
-  localparam bit [15:0] PauseDr = 16'b0000_0010_0000_0000;  // 100
-  localparam bit [15:0] PauseIr = 16'b0000_0100_0000_0000;  // 200
-  localparam bit [15:0] Exit2Dr = 16'b0000_1000_0000_0000;  // 400
-  localparam bit [15:0] Exit2Ir = 16'b0001_0000_0000_0000;  // 800
-  localparam bit [15:0] UpdateDr = 16'b0010_0000_0000_0000;  // 1000
-  localparam bit [15:0] UpdateIr = 16'b0100_0000_0000_0000;  // 2000
+  localparam reg [15:0] TestLogicReset = 16'b0000_0000_0000_0000;  // 0
+  localparam reg [15:0] RunTestOrIdle = 16'b0000_0000_0000_0001;  // 1
+  localparam reg [15:0] SelectDrScan = 16'b0000_0000_0000_0010;  // 2
+  localparam reg [15:0] SelectIrScan = 16'b0000_0000_0000_0100;  // 4
+  localparam reg [15:0] CaptureDr = 16'b0000_0000_0000_1000;  // 8
+  localparam reg [15:0] CaptureIr = 16'b0000_0000_0001_0000;  // 10
+  localparam reg [15:0] ShiftDr = 16'b0000_0000_0010_0000;  // 20
+  localparam reg [15:0] ShiftIr = 16'b0000_0000_0100_0000;  // 40
+  localparam reg [15:0] Exit1Dr = 16'b0000_0000_1000_0000;  // 80
+  localparam reg [15:0] Exit1Ir = 16'b0000_0001_0000_0000;  // 100
+  localparam reg [15:0] PauseDr = 16'b0000_0010_0000_0000;  // 100
+  localparam reg [15:0] PauseIr = 16'b0000_0100_0000_0000;  // 200
+  localparam reg [15:0] Exit2Dr = 16'b0000_1000_0000_0000;  // 400
+  localparam reg [15:0] Exit2Ir = 16'b0001_0000_0000_0000;  // 800
+  localparam reg [15:0] UpdateDr = 16'b0010_0000_0000_0000;  // 1000
+  localparam reg [15:0] UpdateIr = 16'b0100_0000_0000_0000;  // 2000
 
   reg [15:0] current_state;
 
   // IR Instruction values
-  localparam bit [3:0] Abort = 4'b1000;
-  localparam bit [3:0] IdCode = 4'b1110;
-  localparam bit [3:0] Bypass = 4'b1111;
+  localparam reg [3:0] Abort = 4'b1000;
+  localparam reg [3:0] IdCode = 4'b1110;
+  localparam reg [3:0] Bypass = 4'b1111;
 
   reg [3:0] current_ir_instruction;
 
   // DR Register containing the IDCODE of our jtag device.
-  localparam bit [31:0] IdCodeDrRegister = 32'hFAF01;
+  localparam reg [31:0] IdCodeDrRegister = 32'hFAF01;
 
   // whether a reset in the main design has been seen.
   //wire r_in_reset_from_main_clk;
 
   // for checking that the TAP state machine is in reset at the right time.
   // TODO: move this behind an `ifdef FORMAL and prefix with `f_`
-  bit [4:0] tms_reset_check;
-  bit [7:0] cycles;
+  reg [4:0] tms_reset_check;
+  reg [7:0] cycles;
 
   // Are we done writing the idcode?
   wire idcode_out_done;
 
-  bit byte_transmitter_enable;
-  bit reset_byte_transmitter;
+  reg byte_transmitter_enable;
+  reg reset_byte_transmitter;
   wire transmitter_channel;  // for byte_transmitter to write to TDO
 
   byte_transmitter id_byte_transmitter (
@@ -86,8 +86,8 @@ module jtag (
       .done(idcode_out_done)
   );
 
-  bit tap_channel;  // for TAP controller to write to TDO
-  bit r_output_selector_transmitter;  // 1 means TAP controller, 0 means byte transmitter
+  reg tap_channel;  // for TAP controller to write to TDO
+  reg r_output_selector_transmitter;  // 1 means TAP controller, 0 means byte transmitter
 
   assign tdo = r_output_selector_transmitter ? tap_channel : transmitter_channel;
 
@@ -103,7 +103,7 @@ module jtag (
   assign r_in_reset_from_main_clk = sync[1] & !sync[2];
   */
 
-  bit been_reset;
+  reg been_reset;
 
   always @(negedge tck) begin
     if (r_output_selector_transmitter) tap_channel <= 1'b0;
