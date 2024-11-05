@@ -109,8 +109,6 @@ module jtag (
   assign r_in_reset_from_main_clk = sync[1] & !sync[2];
   */
 
-  reg been_reset;
-
   always @(negedge tck) begin
     if (r_output_selector_transmitter) tap_channel <= 1'b0;
   end
@@ -130,8 +128,7 @@ module jtag (
       r_output_selector_transmitter <= 1'b1;  // by default the tap controller writes
       byte_transmitter_enable <= 1'b0;
       reset_byte_transmitter <= 1'b0;
-      been_reset <= 1'b1;
-    end else if (enable && been_reset) begin
+    end else if (enable) begin
       in_run_test_idle <= 1'b0;
       in_select_dr_scan <= 1'b0;
       in_capture_dr <= 1'b0;
@@ -216,7 +213,7 @@ module jtag (
             default: begin
               case (current_ir_instruction)
                 IdCode: begin
-                  if (~idcode_out_done) begin
+                  if (!idcode_out_done) begin
                     current_state <= ShiftDr;
                   end else begin
                     reset_byte_transmitter <= 1'b1;
@@ -337,7 +334,7 @@ module jtag (
     end
 
     //
-    // Checking that states are achievable via the documented Tap FSM
+    // Checking that the documented TAP FSM state transitions are achievable.
     //
     `HAPPENS_BEFORE(TestLogicReset, RunTestOrIdle)
     `HAPPENS_BEFORE(RunTestOrIdle, RunTestOrIdle)

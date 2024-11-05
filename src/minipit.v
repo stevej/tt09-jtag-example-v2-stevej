@@ -4,11 +4,11 @@
 `default_nettype none
 
 module minipit (
-    input clk,
-    input rst_n,
-    input enable,
-    input repeating,
-    input [15:0] counter,
+    input wire clk,
+    input wire rst_n,
+    input wire enable,
+    input wire repeating,
+    input wire [15:0] counter,
     output wire interrupting
 );
 

@@ -6,9 +6,9 @@
 // Given a byte, writes out 1 bit at a time while enable is high.
 // Assumes the caller is tracking when 8 bits is sent.
 module byte_transmitter (
-    (* gclk *) input clk,
-    input reset,
-    input enable,
+    (* gclk *) input wire clk,
+    input wire reset,
+    input wire enable,
     // TODO: make size configurable
     input wire [31:0] in,  // byte_buffer
     output wire out,
