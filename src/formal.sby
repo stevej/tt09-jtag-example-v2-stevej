@@ -9,6 +9,7 @@ bmc: depth 20
 prove: mode prove
 cover: mode cover
 cover: append 10
+bmc: multiclock on
 
 [engines]
 bmc: smtbmc

@@ -19,7 +19,10 @@
   end;
 
 module jtag (
-    (* gclk *) input wire tck,
+  `ifdef FORMAL
+  (*gclk*)
+  `endif
+    input wire tck,
     /* verilator lint_off UNUSED */
     input wire tdi,
     input wire tms,

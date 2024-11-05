@@ -7,7 +7,7 @@ PACKAGE = sg48
 all: $(PROJ).rpt $(PROJ).bin
 
 %.json: %.v
-	yosys -p 'synth_ice40 -top tt_fpga_top -json $@' $<
+	yosys -g -p 'synth_ice40 -top tt_fpga_top -json $@' $<
 
 %.asc: $(PIN_DEF) %.json
 		nextpnr-ice40 --pcf-allow-unconstrained --$(DEVICE) --package $(PACKAGE) --asc $@ --pcf $< --json $*.json
