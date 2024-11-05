@@ -12,6 +12,12 @@
     HA_``first_state``_to_``second_state : assert ($past(current_state) == first_state); \
   end;
 
+// Ensures that we are able to leave the state in the FSM.
+`define STATE_EXITS(state) \
+  if (f_past_valid && $past(trst) && trst_n && $past(current_state) == state) begin \
+   STATE_EXITS_``state`` : assert (current_state != state); \
+  end;
+
 module jtag (
     (* gclk *) input wire tck,
     /* verilator lint_off UNUSED */
@@ -364,6 +370,24 @@ module jtag (
     `HAPPENS_BEFORE(UpdateIr, SelectDrScan)
     `HAPPENS_BEFORE(UpdateIr, RunTestOrIdle)
     `HAPPENS_BEFORE(SelectIrScan, TestLogicReset)
+
+    // Assert that we can leave each state of the Tap FSM
+    `STATE_EXITS(TestLogicReset)
+    `STATE_EXITS(RunTestOrIdle)
+    `STATE_EXITS(SelectDrScan)
+    `STATE_EXITS(SelectIrScan)
+    `STATE_EXITS(CaptureDr)
+    `STATE_EXITS(CaptureIr)
+    `STATE_EXITS(ShiftDr)
+    `STATE_EXITS(ShiftIr)
+    `STATE_EXITS(Exit1Dr)
+    `STATE_EXITS(Exit1Ir)
+    `STATE_EXITS(PauseDr)
+    `STATE_EXITS(PauseIr)
+    `STATE_EXITS(Exit2Dr)
+    `STATE_EXITS(Exit2Ir)
+    `STATE_EXITS(UpdateDr)
+    `STATE_EXITS(UpdateIr)
 
   end
 `endif
