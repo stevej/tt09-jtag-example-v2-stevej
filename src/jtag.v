@@ -25,23 +25,30 @@ module jtag (
   wire trst;
   assign trst = ~trst_n;
 
+  // Debug signals to see how far we've gotten in the TAP state machine.
+  bit in_run_test_idle;
+  bit in_select_dr_scan;
+  bit in_capture_dr;
+  bit in_shift_dr;
+  bit in_exit1_dr;
+
   // TAP controller state in one-hot encoding
   localparam bit [15:0] TestLogicReset = 16'b0000_0000_0000_0000;  // 0
   localparam bit [15:0] RunTestOrIdle = 16'b0000_0000_0000_0001;  // 1
   localparam bit [15:0] SelectDrScan = 16'b0000_0000_0000_0010;  // 2
-  localparam bit [15:0] SelectIrScan = 16'b0000_0000_0000_0100;  // 3
-  localparam bit [15:0] CaptureDr = 16'b0000_0000_0000_1000;  // 4
-  localparam bit [15:0] CaptureIr = 16'b0000_0000_0001_0000;  // 5
-  localparam bit [15:0] ShiftDr = 16'b0000_0000_0010_0000;  // 6
-  localparam bit [15:0] ShiftIr = 16'b0000_0000_0100_0000;  // 7
-  localparam bit [15:0] Exit1Dr = 16'b0000_0000_1000_0000;  // 8
-  localparam bit [15:0] Exit1Ir = 16'b0000_0001_0000_0000;  // 9
-  localparam bit [15:0] PauseDr = 16'b0000_0010_0000_0000;  // 10
-  localparam bit [15:0] PauseIr = 16'b0000_0100_0000_0000;  // 11
-  localparam bit [15:0] Exit2Dr = 16'b0000_1000_0000_0000;  // 12
-  localparam bit [15:0] Exit2Ir = 16'b0001_0000_0000_0000;  // 13
-  localparam bit [15:0] UpdateDr = 16'b0010_0000_0000_0000;  // 14
-  localparam bit [15:0] UpdateIr = 16'b0100_0000_0000_0000;  // 15
+  localparam bit [15:0] SelectIrScan = 16'b0000_0000_0000_0100;  // 4
+  localparam bit [15:0] CaptureDr = 16'b0000_0000_0000_1000;  // 8
+  localparam bit [15:0] CaptureIr = 16'b0000_0000_0001_0000;  // 10
+  localparam bit [15:0] ShiftDr = 16'b0000_0000_0010_0000;  // 20
+  localparam bit [15:0] ShiftIr = 16'b0000_0000_0100_0000;  // 40
+  localparam bit [15:0] Exit1Dr = 16'b0000_0000_1000_0000;  // 80
+  localparam bit [15:0] Exit1Ir = 16'b0000_0001_0000_0000;  // 100
+  localparam bit [15:0] PauseDr = 16'b0000_0010_0000_0000;  // 100
+  localparam bit [15:0] PauseIr = 16'b0000_0100_0000_0000;  // 200
+  localparam bit [15:0] Exit2Dr = 16'b0000_1000_0000_0000;  // 400
+  localparam bit [15:0] Exit2Ir = 16'b0001_0000_0000_0000;  // 800
+  localparam bit [15:0] UpdateDr = 16'b0010_0000_0000_0000;  // 1000
+  localparam bit [15:0] UpdateIr = 16'b0100_0000_0000_0000;  // 2000
 
   reg [15:0] current_state;
 
@@ -104,6 +111,12 @@ module jtag (
 
   always @(posedge tck) begin
     if (~trst_n) begin
+      in_run_test_idle <= 1'b0;
+      in_select_dr_scan <= 1'b0;
+      in_capture_dr <= 1'b0;
+      in_shift_dr <= 1'b0;
+      in_exit1_dr <= 1'b0;
+
       current_state <= TestLogicReset;  // State 0
       tms_reset_check <= 5'h0;
       cycles <= 8'h0;
@@ -113,6 +126,12 @@ module jtag (
       reset_byte_transmitter <= 1'b0;
       been_reset <= 1'b1;
     end else if (enable && been_reset) begin
+      in_run_test_idle <= 1'b0;
+      in_select_dr_scan <= 1'b0;
+      in_capture_dr <= 1'b0;
+      in_shift_dr <= 1'b0;
+      in_exit1_dr <= 1'b0;
+
       current_state <= current_state;
       tms_reset_check <= tms_reset_check << 1;
       tms_reset_check[0] <= tms;
@@ -131,12 +150,14 @@ module jtag (
           endcase
         end
         RunTestOrIdle: begin  // 1
+          in_run_test_idle <= 1'b1;
           case (tms)
             1: current_state <= SelectDrScan;
             default: current_state <= RunTestOrIdle;
           endcase
         end
         SelectDrScan: begin  // 2
+          in_select_dr_scan <= 1'b1;
           case (tms)
             1: current_state <= SelectIrScan;
             default: current_state <= CaptureDr;
@@ -149,6 +170,7 @@ module jtag (
           endcase
         end
         CaptureDr: begin  // 4
+          in_capture_dr <= 1'b1;
           case (tms)
             1: current_state <= Exit1Dr;
             default: begin
@@ -180,6 +202,7 @@ module jtag (
           endcase
         end
         ShiftDr: begin  // 6
+          in_shift_dr <= 1'b1;
           // in the Shift-DR state, this data is shifted out, least significant bit first
           // Pretty sure this means connect a shift register to TDO and drain it
           case (tms)
@@ -187,11 +210,12 @@ module jtag (
             default: begin
               case (current_ir_instruction)
                 IdCode: begin
-                  if (!idcode_out_done) begin
+                  if (~idcode_out_done) begin
                     current_state <= ShiftDr;
                   end else begin
                     reset_byte_transmitter <= 1'b1;
                     byte_transmitter_enable <= 1'b0;
+                    r_output_selector_transmitter <= 1'b1; // give the TAP controller write control.
                     current_state <= Exit1Dr;  // Not sure if this is correct.
                   end
                 end
@@ -210,6 +234,7 @@ module jtag (
           endcase
         end
         Exit1Dr: begin  // 8
+          in_exit1_dr <= 1'b1;
           case (tms)
             1: current_state <= UpdateDr;
             default: current_state <= PauseDr;
