@@ -108,12 +108,12 @@ module jtag (
   assign r_in_reset_from_main_clk = sync[1] & !sync[2];
   */
 
-  always @(negedge clk_tck) begin
+  always_ff @(negedge clk_tck) begin
     if (r_output_selector_transmitter) tap_channel <= 1'b0;
   end
 
-  always @(posedge clk_tck) begin
-    if (!trst_n) begin
+  always_ff @(posedge clk_tck) begin
+    if (!trst_n) begin  // TODO: is trst_n async for JTAG?
       in_run_test_idle <= 1'b0;
       in_select_dr_scan <= 1'b0;
       in_capture_dr <= 1'b0;

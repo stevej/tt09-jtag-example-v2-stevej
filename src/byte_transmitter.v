@@ -28,7 +28,7 @@ module byte_transmitter (
 
   // TDO must be written on the falling edge
   // to avoid hold violations.
-  always @(negedge clk_tck) begin
+  always_ff @(negedge clk_tck) begin
     if (reset) begin
       byte_count <= 6'h20;
       r_done <= 1'b0;
