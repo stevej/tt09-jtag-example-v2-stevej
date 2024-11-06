@@ -18,12 +18,12 @@ module byte_transmitter (
 );
 
 `ifdef FORMAL
-  reg [5:0] f_total_written;
+  logic [5:0] f_total_written;
 `endif
-  reg [5:0] byte_count;
-  reg r_out;
+  logic [5:0] byte_count;
+  logic r_out;
   assign out = r_out;
-  reg r_done;
+  logic r_done;
   assign done = r_done;
 
   // TDO must be written on the falling edge

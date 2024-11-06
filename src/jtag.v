@@ -8,95 +8,92 @@
 // Ensures that the first_state happens before the second_state.
 // We use a label as a breadcrumb in case an invalid state is asserted
 `define HAPPENS_BEFORE(first_state, second_state) \
-  if (f_past_valid && $past(trst) && trst_n && current_state == second_state) begin \
+  if (f_past_valid && $past(!trst_n) && trst_n && current_state == second_state) begin \
     HA_``first_state``_to_``second_state : assert ($past(current_state) == first_state); \
   end;
 
 // Ensures that we are able to leave the state in the FSM.
 `define STATE_EXITS(state) \
-  if (f_past_valid && $past(trst) && trst_n && $past(current_state) == state) begin \
+  if (f_past_valid && $past(!trst_n) && trst_n && $past(current_state) == state) begin \
    STATE_EXITS_``state`` : assert (current_state != state); \
   end;
 
 module jtag (
 `ifdef FORMAL (*gclk*)
 `endif
-    input  wire tck,
+    input  logic clk_tck,
     /* verilator lint_off UNUSED */
-    input  wire tdi,
-    input  wire tms,
-    input  wire trst_n,  /* TRST_N */
-    input  wire enable,
-    output wire tdo
+    input  logic tdi,
+    input  logic tms,
+    input  logic trst_n,   /* TRST_N active low reset */
+    input  logic enable,
+    output logic tdo
 );
 
-  wire trst;
-  assign trst = ~trst_n;
-
   // Debug signals to see how far we've gotten in the TAP state machine.
-  reg in_run_test_idle;
-  reg in_select_dr_scan;
-  reg in_capture_dr;
-  reg in_shift_dr;
-  reg in_exit1_dr;
+  logic in_run_test_idle;
+  logic in_select_dr_scan;
+  logic in_capture_dr;
+  logic in_shift_dr;
+  logic in_exit1_dr;
 
   // TAP controller state in one-hot encoding
-  localparam reg [15:0] TestLogicReset = 16'b0000_0000_0000_0000;  // 0
-  localparam reg [15:0] RunTestOrIdle = 16'b0000_0000_0000_0001;  // 1
-  localparam reg [15:0] SelectDrScan = 16'b0000_0000_0000_0010;  // 2
-  localparam reg [15:0] SelectIrScan = 16'b0000_0000_0000_0100;  // 4
-  localparam reg [15:0] CaptureDr = 16'b0000_0000_0000_1000;  // 8
-  localparam reg [15:0] CaptureIr = 16'b0000_0000_0001_0000;  // 10
-  localparam reg [15:0] ShiftDr = 16'b0000_0000_0010_0000;  // 20
-  localparam reg [15:0] ShiftIr = 16'b0000_0000_0100_0000;  // 40
-  localparam reg [15:0] Exit1Dr = 16'b0000_0000_1000_0000;  // 80
-  localparam reg [15:0] Exit1Ir = 16'b0000_0001_0000_0000;  // 100
-  localparam reg [15:0] PauseDr = 16'b0000_0010_0000_0000;  // 100
-  localparam reg [15:0] PauseIr = 16'b0000_0100_0000_0000;  // 200
-  localparam reg [15:0] Exit2Dr = 16'b0000_1000_0000_0000;  // 400
-  localparam reg [15:0] Exit2Ir = 16'b0001_0000_0000_0000;  // 800
-  localparam reg [15:0] UpdateDr = 16'b0010_0000_0000_0000;  // 1000
-  localparam reg [15:0] UpdateIr = 16'b0100_0000_0000_0000;  // 2000
+  localparam logic [15:0] TestLogicReset = 16'b0000_0000_0000_0000;  // 0
+  localparam logic [15:0] RunTestOrIdle = 16'b0000_0000_0000_0001;  // 1
+  localparam logic [15:0] SelectDrScan = 16'b0000_0000_0000_0010;  // 2
+  localparam logic [15:0] SelectIrScan = 16'b0000_0000_0000_0100;  // 4
+  localparam logic [15:0] CaptureDr = 16'b0000_0000_0000_1000;  // 8
+  localparam logic [15:0] CaptureIr = 16'b0000_0000_0001_0000;  // 10
+  localparam logic [15:0] ShiftDr = 16'b0000_0000_0010_0000;  // 20
+  localparam logic [15:0] ShiftIr = 16'b0000_0000_0100_0000;  // 40
+  localparam logic [15:0] Exit1Dr = 16'b0000_0000_1000_0000;  // 80
+  localparam logic [15:0] Exit1Ir = 16'b0000_0001_0000_0000;  // 100
+  localparam logic [15:0] PauseDr = 16'b0000_0010_0000_0000;  // 100
+  localparam logic [15:0] PauseIr = 16'b0000_0100_0000_0000;  // 200
+  localparam logic [15:0] Exit2Dr = 16'b0000_1000_0000_0000;  // 400
+  localparam logic [15:0] Exit2Ir = 16'b0001_0000_0000_0000;  // 800
+  localparam logic [15:0] UpdateDr = 16'b0010_0000_0000_0000;  // 1000
+  localparam logic [15:0] UpdateIr = 16'b0100_0000_0000_0000;  // 2000
 
-  reg [15:0] current_state;
+  logic [15:0] current_state;
 
   // IR Instruction values
-  localparam reg [3:0] Abort = 4'b1000;
-  localparam reg [3:0] IdCode = 4'b1110;
-  localparam reg [3:0] Bypass = 4'b1111;
+  localparam logic [3:0] Abort = 4'b1000;
+  localparam logic [3:0] IdCode = 4'b1110;
+  localparam logic [3:0] Bypass = 4'b1111;
 
-  reg [3:0] current_ir_instruction;
+  logic [3:0] current_ir_instruction;
 
   // DR Register containing the IDCODE of our jtag device.
-  localparam reg [31:0] IdCodeDrRegister = 32'hFAF01;
+  localparam logic [31:0] IdCodeDrlogicister = 32'hFAF01;
 
   // whether a reset in the main design has been seen.
   //wire r_in_reset_from_main_clk;
 
   // for checking that the TAP state machine is in reset at the right time.
 `ifdef FORMAL
-  reg [4:0] f_tms_reset_check;
+  logic [4:0] f_tms_reset_check;
 `endif
-  reg [7:0] cycles;
+  logic [7:0] cycles;
 
   // Are we done writing the idcode?
   wire idcode_out_done;
 
-  reg byte_transmitter_enable;
-  reg reset_byte_transmitter;
+  logic byte_transmitter_enable;
+  logic reset_byte_transmitter;
   wire transmitter_channel;  // for byte_transmitter to write to TDO
 
   byte_transmitter id_byte_transmitter (
-      .clk_tck(tck),
+      .clk_tck(clk_tck),
       .reset(~trst_n | reset_byte_transmitter),
       .enable(byte_transmitter_enable),
-      .in(IdCodeDrRegister),
+      .in(IdCodeDrlogicister),
       .out(transmitter_channel),  // make this another wire.
       .done(idcode_out_done)
   );
 
-  reg tap_channel;  // for TAP controller to write to TDO
-  reg r_output_selector_transmitter;  // 1 means TAP controller, 0 means byte transmitter
+  logic tap_channel;  // for TAP controller to write to TDO
+  logic r_output_selector_transmitter;  // 1 means TAP controller, 0 means byte transmitter
 
   assign tdo = r_output_selector_transmitter ? tap_channel : transmitter_channel;
 
@@ -112,12 +109,12 @@ module jtag (
   assign r_in_reset_from_main_clk = sync[1] & !sync[2];
   */
 
-  always @(negedge tck) begin
+  always @(negedge clk_tck) begin
     if (r_output_selector_transmitter) tap_channel <= 1'b0;
   end
 
-  always @(posedge tck) begin
-    if (~trst_n) begin
+  always @(posedge clk_tck) begin
+    if (!trst_n) begin
       in_run_test_idle <= 1'b0;
       in_select_dr_scan <= 1'b0;
       in_capture_dr <= 1'b0;
@@ -311,15 +308,15 @@ module jtag (
     f_past_valid = 0;
   end
 
-  always @(posedge tck) f_past_valid <= 1;
+  always @(posedge clk_tck) f_past_valid <= 1;
 
-  always @(posedge tck) begin
+  always @(posedge clk_tck) begin
     if (f_past_valid) begin
       // our state never overruns the enum values.
       cover (current_state <= UpdateIr);
     end
 
-    if (f_past_valid && $past(~trst_n) && $past(trst_n)) begin
+    if (f_past_valid && $past(!trst_n) && $past(trst_n)) begin
       // Checks that default values are making it out of reset.
       assert (current_state == 5'b0_0000);
       assert (r_output_selector_transmitter == 1'b1);
@@ -329,14 +326,14 @@ module jtag (
     end
   end
 
-  always @(posedge tck) begin
+  always @(posedge clk_tck) begin
     // Whenever TMS is high for five cycles, the design is in reset
     if (f_past_valid && $past(~trst_n) && trst_n && ($past(f_tms_reset_check) == 5'b1_1111)) begin
       assert (current_state == TestLogicReset);
     end
 
     // TRST_n low then high puts us in state 0
-    if (f_past_valid && $past(~trst_n) && trst_n) begin
+    if (f_past_valid && $past(!trst_n) && trst_n) begin
       initial_state : assert (current_state == TestLogicReset);
       assert (tdo != 1'bX);
       assert (r_output_selector_transmitter != 1'bX);

@@ -5,7 +5,7 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles
 
-#@cocotb.test()
+@cocotb.test()
 async def test_minipit_fires_every_ten_cycles(dut):
         dut._log.info("Start")
         clock = Clock(dut.clk, 3, units="us")
@@ -46,7 +46,7 @@ async def test_minipit_fires_every_ten_cycles(dut):
 #    .tdi(ui_in[1]),
 #    .tms(ui_in[2]),
 #    .trst(ui_in[3]),
-#@cocotb.test()
+@cocotb.test()
 async def test_tms_five_high_for_reset(dut):
         dut._log.info("Start")
         clock = Clock(dut.clk, 3, units="us")
@@ -94,8 +94,9 @@ async def test_tms_five_high_for_reset(dut):
         dut.ui_in.value = 0b0000_1111
         await ClockCycles(dut.clk, 1)
 
-        # At this point, the design is in reset but
+        # At this point, the jtag part is in reset but
         # the interrupt is also firing on all the other pins.
+        # UH OH an x is now on tdi in GL simulation
         assert dut.uo_out.value == 0xFE
 
         await ClockCycles(dut.clk, 1)

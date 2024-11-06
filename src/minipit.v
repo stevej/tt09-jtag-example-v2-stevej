@@ -12,10 +12,10 @@ module minipit (
     output wire interrupting
 );
 
-  reg r_interrupting;
+  logic r_interrupting;
   assign interrupting = r_interrupting;
 
-  reg [15:0] current_count;
+  logic [15:0] current_count;
 
   wire counter_tripped;
   assign counter_tripped = enable && (current_count == (counter - 16'h1));

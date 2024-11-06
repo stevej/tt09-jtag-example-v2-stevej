@@ -38,7 +38,7 @@ module tt_um_jtag_example_stevej (
   assign uo_out[0] = tdo;
 
   jtag jtag0 (
-      .tck(ui_in[0]),
+      .clk_tck(ui_in[0]),
       .tdi(ui_in[1]),
       .tms(ui_in[2]),
       .trst_n(ui_in[3]),
