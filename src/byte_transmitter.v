@@ -6,10 +6,9 @@
 // Given a byte, writes out 1 bit at a time while enable is high.
 // Assumes the caller is tracking when 8 bits is sent.
 module byte_transmitter (
-  `ifdef FORMAL
-  (*gclk*)
-  `endif
-    input wire clk,
+`ifdef FORMAL (*gclk*)
+`endif
+    input wire clk_tck,
     input wire reset,
     input wire enable,
     // TODO: make size configurable
@@ -29,7 +28,7 @@ module byte_transmitter (
 
   // TDO must be written on the falling edge
   // to avoid hold violations.
-  always @(negedge clk) begin
+  always @(negedge clk_tck) begin
     if (reset) begin
       byte_count <= 6'h20;
       r_done <= 1'b0;
@@ -71,9 +70,9 @@ module byte_transmitter (
     f_past_valid = 0;
   end
 
-  always @(posedge clk) f_past_valid <= 1;
+  always @(posedge clk_tck) f_past_valid <= 1;
 
-  always @(posedge clk) begin
+  always @(posedge clk_tck) begin
     assume (reset);
 
     if (f_past_valid && enable && done) begin

@@ -19,15 +19,14 @@
   end;
 
 module jtag (
-  `ifdef FORMAL
-  (*gclk*)
-  `endif
-    input wire tck,
+`ifdef FORMAL (*gclk*)
+`endif
+    input  wire tck,
     /* verilator lint_off UNUSED */
-    input wire tdi,
-    input wire tms,
-    input wire trst_n,  /* TRST_N */
-    input wire enable,
+    input  wire tdi,
+    input  wire tms,
+    input  wire trst_n,  /* TRST_N */
+    input  wire enable,
     output wire tdo
 );
 
@@ -75,8 +74,9 @@ module jtag (
   //wire r_in_reset_from_main_clk;
 
   // for checking that the TAP state machine is in reset at the right time.
-  // TODO: move this behind an `ifdef FORMAL and prefix with `f_`
-  reg [4:0] tms_reset_check;
+`ifdef FORMAL
+  reg [4:0] f_tms_reset_check;
+`endif
   reg [7:0] cycles;
 
   // Are we done writing the idcode?
@@ -87,7 +87,7 @@ module jtag (
   wire transmitter_channel;  // for byte_transmitter to write to TDO
 
   byte_transmitter id_byte_transmitter (
-      .clk(tck),
+      .clk_tck(tck),
       .reset(~trst_n | reset_byte_transmitter),
       .enable(byte_transmitter_enable),
       .in(IdCodeDrRegister),
@@ -125,7 +125,9 @@ module jtag (
       in_exit1_dr <= 1'b0;
 
       current_state <= TestLogicReset;  // State 0
-      tms_reset_check <= 5'h0;
+`ifdef FORMAL
+      f_tms_reset_check <= 5'h0;
+`endif
       cycles <= 8'h0;
       current_ir_instruction <= IdCode;  // IDCODE is the default instruction.
       r_output_selector_transmitter <= 1'b1;  // by default the tap controller writes
@@ -139,49 +141,53 @@ module jtag (
       in_exit1_dr <= 1'b0;
 
       current_state <= current_state;
-      tms_reset_check <= tms_reset_check << 1;
-      tms_reset_check[0] <= tms;
+`ifdef FORMAL
+      f_tms_reset_check <= f_tms_reset_check << 1;
+      f_tms_reset_check[0] <= tms;
+`endif
       cycles <= cycles + 1'd1;
       current_ir_instruction <= current_ir_instruction;
       r_output_selector_transmitter <= r_output_selector_transmitter;
       byte_transmitter_enable <= byte_transmitter_enable;
       reset_byte_transmitter <= reset_byte_transmitter;
       // TAP state machine
-      case (current_state)
+      unique case (current_state)
         TestLogicReset: begin  // 0
-          tms_reset_check <= 5'h0;
-          case (tms)
+`ifdef FORMAL
+          f_tms_reset_check <= 5'h0;
+`endif
+          unique case (tms)
             1: current_state <= TestLogicReset;
             default: current_state <= RunTestOrIdle;
           endcase
         end
         RunTestOrIdle: begin  // 1
           in_run_test_idle <= 1'b1;
-          case (tms)
+          unique case (tms)
             1: current_state <= SelectDrScan;
             default: current_state <= RunTestOrIdle;
           endcase
         end
         SelectDrScan: begin  // 2
           in_select_dr_scan <= 1'b1;
-          case (tms)
+          unique case (tms)
             1: current_state <= SelectIrScan;
             default: current_state <= CaptureDr;
           endcase
         end
         SelectIrScan: begin  // 3
-          case (tms)
+          unique case (tms)
             1: current_state <= TestLogicReset;
             default: current_state <= CaptureIr;
           endcase
         end
         CaptureDr: begin  // 4
           in_capture_dr <= 1'b1;
-          case (tms)
+          unique case (tms)
             1: current_state <= Exit1Dr;
             default: begin
               current_state <= ShiftDr;
-              case (current_ir_instruction)
+              unique case (current_ir_instruction)
                 IdCode: begin
                   // place the byte transmitter with the IDCODE register and start to shift it onto TDO.
                   r_output_selector_transmitter <= 1'b0;
@@ -202,7 +208,7 @@ module jtag (
           endcase
         end
         CaptureIr: begin  // 5
-          case (tms)
+          unique case (tms)
             1: current_state <= Exit1Ir;
             default: current_state <= ShiftIr;
           endcase
@@ -211,10 +217,10 @@ module jtag (
           in_shift_dr <= 1'b1;
           // in the Shift-DR state, this data is shifted out, least significant bit first
           // Pretty sure this means connect a shift register to TDO and drain it
-          case (tms)
+          unique case (tms)
             1: current_state <= Exit1Dr;
             default: begin
-              case (current_ir_instruction)
+              unique case (current_ir_instruction)
                 IdCode: begin
                   if (!idcode_out_done) begin
                     current_state <= ShiftDr;
@@ -234,56 +240,56 @@ module jtag (
           endcase
         end
         ShiftIr: begin  // 7
-          case (tms)
+          unique case (tms)
             1: current_state <= Exit1Ir;
             default: current_state <= ShiftIr;
           endcase
         end
         Exit1Dr: begin  // 8
           in_exit1_dr <= 1'b1;
-          case (tms)
+          unique case (tms)
             1: current_state <= UpdateDr;
             default: current_state <= PauseDr;
           endcase
         end
         Exit1Ir: begin  // 9
-          case (tms)
+          unique case (tms)
             1: current_state <= UpdateIr;
             default: current_state <= PauseIr;
           endcase
         end
         PauseDr: begin  // 10
-          case (tms)
+          unique case (tms)
             1: current_state <= Exit2Dr;
             default: current_state <= PauseDr;
           endcase
         end
         PauseIr: begin  // 11
-          case (tms)
+          unique case (tms)
             1: current_state <= Exit2Ir;
             default: current_state <= PauseIr;
           endcase
         end
         Exit2Dr: begin  // 12
-          case (tms)
+          unique case (tms)
             1: current_state <= UpdateDr;
             default: current_state <= ShiftDr;
           endcase
         end
         Exit2Ir: begin  // 13
-          case (tms)
+          unique case (tms)
             1: current_state <= UpdateIr;
             default: current_state <= ShiftIr;
           endcase
         end
         UpdateDr: begin  // 14
-          case (tms)
+          unique case (tms)
             1: current_state <= SelectDrScan;
             default: current_state <= RunTestOrIdle;
           endcase
         end
         UpdateIr: begin  // 15
-          case (tms)
+          unique case (tms)
             1: current_state <= SelectDrScan;
             default: current_state <= RunTestOrIdle;
           endcase
@@ -325,7 +331,7 @@ module jtag (
 
   always @(posedge tck) begin
     // Whenever TMS is high for five cycles, the design is in reset
-    if (f_past_valid && $past(~trst_n) && trst_n && ($past(tms_reset_check) == 5'b1_1111)) begin
+    if (f_past_valid && $past(~trst_n) && trst_n && ($past(f_tms_reset_check) == 5'b1_1111)) begin
       assert (current_state == TestLogicReset);
     end
 
@@ -391,5 +397,8 @@ module jtag (
 
   end
 `endif
+  `undef HAPPENS_BEFORE
+  `undef STATE_EXITS
+
 endmodule
 `endif

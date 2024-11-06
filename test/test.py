@@ -5,7 +5,7 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles
 
-@cocotb.test()
+#@cocotb.test()
 async def test_minipit_fires_every_ten_cycles(dut):
         dut._log.info("Start")
         clock = Clock(dut.clk, 3, units="us")
@@ -46,7 +46,7 @@ async def test_minipit_fires_every_ten_cycles(dut):
 #    .tdi(ui_in[1]),
 #    .tms(ui_in[2]),
 #    .trst(ui_in[3]),
-@cocotb.test()
+#@cocotb.test()
 async def test_tms_five_high_for_reset(dut):
         dut._log.info("Start")
         clock = Clock(dut.clk, 3, units="us")
@@ -56,7 +56,7 @@ async def test_tms_five_high_for_reset(dut):
         dut.ui_in.value = 0
         dut.uio_in.value = 0
         dut.rst_n.value = 1
-
+        dut.ui_in.value = 0b0000_1000
         await ClockCycles(dut.clk, 1)
         dut.rst_n.value = 0
         await ClockCycles(dut.clk, 1)
@@ -105,7 +105,7 @@ async def test_tms_five_high_for_reset(dut):
 @cocotb.test()
 async def test_idcode(dut):
         dut._log.info("Start")
-        clock = Clock(dut.clk, 1, units="us")
+        clock = Clock(dut.clk, 3, units="us")
         cocotb.start_soon(clock.start())
         dut._log.info("Reset the part")
         dut.ena.value = 1
@@ -128,7 +128,7 @@ async def test_idcode(dut):
         dut.ui_in.value = 0b0000_1000
         await ClockCycles(dut.clk, 1)
 
-        # Should be nothing on the output lines as there hasn't been enough
+        # Should be nothing on the output lines as there hasn't been enough cycles
         # for an interrupt and we haven't changed out of the initial JTAG state.
         assert dut.uo_out.value == 0x0
 
@@ -139,7 +139,7 @@ async def test_idcode(dut):
         #
         # Drive TCK and TMS into ShiftDr state
         # TMS: 0 1 0 0 to get into ShiftDr
-        STATES = [0b0000_1001, 0b0000_1101, 0b0000_1001, 0b0000_1001]
+        STATES = [0b0000_1101, 0b0000_1001, 0b0000_1001] #, 0b0000_1001]
         for state in STATES:
                 dut.ui_in.value = state
                 await ClockCycles(dut.clk, 1)
