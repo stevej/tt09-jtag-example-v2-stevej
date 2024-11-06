@@ -328,6 +328,7 @@ module jtag (
     // Whenever TMS is high for five cycles, the design is in reset
     if (f_past_valid && $past(~trst_n) && trst_n && ($past(f_tms_reset_check) == 5'b1_1111)) begin
       assert (current_state == TestLogicReset);
+      assert (tdo != 1'bX);
     end
 
     // TRST_n low then high puts us in state 0
