@@ -17,4 +17,5 @@ src/formal/
 src/formal_bmc/
 src/formal_cover/
 src/formal_prove/
+harden.log
 ~
