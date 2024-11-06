@@ -8,13 +8,13 @@
 module byte_transmitter (
 `ifdef FORMAL (*gclk*)
 `endif
-    input wire clk_tck,
-    input wire reset,
-    input wire enable,
+    input logic clk_tck,
+    input logic reset,
+    input logic enable,
     // TODO: make size configurable
-    input wire [31:0] in,  // byte_buffer
-    output wire out,
-    output wire done
+    input logic [31:0] in,  // byte_buffer
+    output logic out,
+    output logic done
 );
 
 `ifdef FORMAL
