@@ -38,22 +38,22 @@ module jtag (
   logic in_exit1_dr;
 
   // TAP Controller state machine current_state values
-  localparam logic [3:0] TestLogicReset = 4'h0;  // 0
-  localparam logic [3:0] RunTestOrIdle = 4'h1;  // 1
-  localparam logic [3:0] SelectDrScan = 4'h2;  // 2
-  localparam logic [3:0] SelectIrScan = 4'h3;  // 4
-  localparam logic [3:0] CaptureDr = 4'h4;  // 8
-  localparam logic [3:0] CaptureIr = 4'h5;  // 10
-  localparam logic [3:0] ShiftDr = 4'h6;  // 20
-  localparam logic [3:0] ShiftIr = 4'h7;  // 40
-  localparam logic [3:0] Exit1Dr = 4'h8;  // 80
-  localparam logic [3:0] Exit1Ir = 4'h9;  // 100
-  localparam logic [3:0] PauseDr = 4'hA;  // 100
-  localparam logic [3:0] PauseIr = 4'hB;  // 200
-  localparam logic [3:0] Exit2Dr = 4'hC;  // 400
-  localparam logic [3:0] Exit2Ir = 4'hD;  // 800
-  localparam logic [3:0] UpdateDr = 4'hE;  // 1000
-  localparam logic [3:0] UpdateIr = 4'hF;  // 2000
+  localparam logic [3:0] TestLogicReset = 4'h0;
+  localparam logic [3:0] RunTestOrIdle = 4'h1;
+  localparam logic [3:0] SelectDrScan = 4'h2;
+  localparam logic [3:0] SelectIrScan = 4'h3;
+  localparam logic [3:0] CaptureDr = 4'h4;
+  localparam logic [3:0] CaptureIr = 4'h5;
+  localparam logic [3:0] ShiftDr = 4'h6;
+  localparam logic [3:0] ShiftIr = 4'h7;
+  localparam logic [3:0] Exit1Dr = 4'h8;
+  localparam logic [3:0] Exit1Ir = 4'h9;
+  localparam logic [3:0] PauseDr = 4'hA;
+  localparam logic [3:0] PauseIr = 4'hB;
+  localparam logic [3:0] Exit2Dr = 4'hC;
+  localparam logic [3:0] Exit2Ir = 4'hD;
+  localparam logic [3:0] UpdateDr = 4'hE;
+  localparam logic [3:0] UpdateIr = 4'hF;
 
   logic [3:0] current_state;
 
