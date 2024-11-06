@@ -74,14 +74,13 @@ module jtag (
 `ifdef FORMAL
   logic [4:0] f_tms_reset_check;
 `endif
-  logic [7:0] cycles;
 
   // Are we done writing the idcode?
-  wire idcode_out_done;
+  wire  idcode_out_done;
 
   logic byte_transmitter_enable;
   logic reset_byte_transmitter;
-  wire transmitter_channel;  // for byte_transmitter to write to TDO
+  wire  transmitter_channel;  // for byte_transmitter to write to TDO
 
   byte_transmitter id_byte_transmitter (
       .clk_tck(clk_tck),
@@ -125,7 +124,6 @@ module jtag (
 `ifdef FORMAL
       f_tms_reset_check <= 5'h0;
 `endif
-      cycles <= 8'h0;
       current_ir_instruction <= IdCode;  // IDCODE is the default instruction.
       r_output_selector_transmitter <= 1'b1;  // by default the tap controller writes
       byte_transmitter_enable <= 1'b0;
@@ -137,12 +135,12 @@ module jtag (
       in_shift_dr <= 1'b0;
       in_exit1_dr <= 1'b0;
 
+      // TODO: Trying to set a default value here might backfire on me.
       current_state <= current_state;
 `ifdef FORMAL
       f_tms_reset_check <= f_tms_reset_check << 1;
       f_tms_reset_check[0] <= tms;
 `endif
-      cycles <= cycles + 1'd1;
       current_ir_instruction <= current_ir_instruction;
       r_output_selector_transmitter <= r_output_selector_transmitter;
       byte_transmitter_enable <= byte_transmitter_enable;
