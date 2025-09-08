@@ -3,8 +3,7 @@
 
 `default_nettype none
 
-// Given a byte, writes out 1 bit at a time while enable is high.
-// Assumes the caller is tracking when 8 bits is sent.
+// TODO: not a byte transmitter any more, can transmit any number of bits.
 module byte_transmitter (
 `ifdef FORMAL (*gclk*)
 `endif

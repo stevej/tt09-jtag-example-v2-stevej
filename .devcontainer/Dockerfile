@@ -6,7 +6,7 @@ ENV PDK_ROOT=/home/vscode/ttsetup/pdk
 ENV PDK=sky130A
 
 RUN apt update && apt-get install build-essential -y && apt install -y autoconf gperf make gcc g++ bison flex
-RUN apt install -y python3 python3-pip python3-venv python3-tk python-is-python3 libcairo2 verilator libpng-dev libqhull-dev wget
+RUN apt install -y python3 python3-pip python3-venv python3-tk python-is-python3 libcairo2 verilator libpng-dev libqhull-dev wget ninja-build
 
 # Clone tt-support-tools
 RUN mkdir -p /ttsetup
